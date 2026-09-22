@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jobs Tracker — Gutter Genie</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',system-ui,sans-serif}
+body{background:#0b1f16;color:#e8f5ee;min-height:100vh;padding:24px}
+.wrap{max-width:1100px;margin:0 auto}
+header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px}
+h1{color:#4ade80;font-size:24px}
+.back{color:#9dc7af;text-decoration:none;font-size:14px}
+.back:hover{color:#fff}
+.search-row{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap}
+input,select,textarea{background:#0f2b1f;border:1px solid #1d4432;color:#e8f5ee;padding:10px 12px;border-radius:8px;font-size:14px;outline:none}
+input:focus,select:focus{border-color:#4ade80}
+#search{flex:1;min-width:220px}
+button{background:#1d5b3c;border:1px solid #2f855a;color:#fff;padding:10px 16px;border-radius:8px;cursor:pointer;font-size:14px}
+button:hover{background:#247248}
+form{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;background:#0f2b1f;border:1px solid #1d4432;border-radius:14px;padding:18px;margin-bottom:22px}
+form h2{grid-column:1/-1;font-size:16px;color:#c9e8d6}
+table{width:100%;border-collapse:collapse;background:#0f2b1f;border-radius:12px;overflow:hidden}
+th,td{padding:12px 14px;text-align:left;font-size:14px;border-bottom:1px solid #1d4432}
+th{background:#123626;color:#4ade80;font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+tr:hover td{background:#123626}
+.badge{padding:3px 10px;border-radius:20px;font-size:12px;white-space:nowrap}
+.b-lead{background:#3b3b1d;color:#fde047}.b-quoted{background:#1e3a5f;color:#60a5fa}.b-scheduled{background:#3a2a5f;color:#c084fc}.b-done{background:#1d5b3c;color:#4ade80}.b-paid{background:#0f3d2e;color:#34d399}
+.ago{color:#9dc7af;font-size:12px}
+.del{background:none;border:none;color:#f87171;cursor:pointer;padding:2px 6px}
+.empty{text-align:center;color:#9dc7af;padding:40px}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+a.btn{background:#1d5b3c;border:1px solid #2f855a;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>🪠 Jobs Tracker</h1>
+  <div class="actions">
+    <a class="btn" href="https://www.notion.so/3e3bc778e6858176a26fc36e57527f8d" target="_blank">Open in Notion ↗</a>
+    <a class="back" href="index.html">← Master App</a>
+  </div>
+</header>
+<div class="search-row">
+  <input id="search" placeholder="🔍 Search name, address, email, phone, notes…" oninput="render()">
+  <select id="fStatus" onchange="render()">
+    <option value="">All statuses</option><option>Lead</option><option>Quoted</option><option>Scheduled</option><option>Done</option><option>Paid</option>
+  </select>
+  <button onclick="exportCSV()">Export CSV</button>
+</div>
+<form id="jobForm">
+  <h2>➕ Add Job</h2>
+  <input id="name" placeholder="Customer Name *" required>
+  <input id="address" placeholder="Address">
+  <input id="email" type="email" placeholder="Email">
+  <input id="phone" placeholder="Phone">
+  <select id="status"><option>Lead</option><option>Quoted</option><option>Scheduled</option><option>Done</option><option>Paid</option></select>
+  <input id="quote" type="number" step="0.01" placeholder="Quote Amount ($)">
+  <input id="lastEmail" type="datetime-local" title="Last email received">
+  <input id="jobDate" type="date" title="Job date">
+  <input id="notes" placeholder="Notes" style="grid-column:1/-1">
+  <button type="submit">Save Job</button>
+</form>
+<div id="list"></div>
+</div>
+<script>
+const KEY='gg_jobs';
+let jobs=JSON.parse(localStorage.getItem(KEY)||'[]');
+function save(){localStorage.setItem(KEY,JSON.stringify(jobs));}
+function timeAgo(d){if(!d)return'';const s=(Date.now()-new Date(d).getTime())/1e3;
+ if(s<60)return'just now';if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';
+ if(s<604800)return Math.floor(s/86400)+'d ago';return Math.floor(s/604800)+'w ago';}
+function badge(s){return 'b-'+s.toLowerCase();}
+function render(){
+  const q=document.getElementById('search').value.toLowerCase(),fs=document.getElementById('fStatus').value;
+  const rows=jobs.map((j,i)=>({...j,i})).filter(j=>{
+    if(fs&&j.status!==fs)return false;
+    return !q||[j.name,j.address,j.email,j.phone,j.notes].join(' ').toLowerCase().includes(q);
+  }).sort((a,b)=>(b.lastEmail||'')-(a.lastEmail||'')||0);
+  if(!rows.length){document.getElementById('list').innerHTML='<div class="empty">No jobs found. Add your first job above 👆</div>';return;}
+  document.getElementById('list').innerHTML=`<table><thead><tr>
+    <th>Customer</th><th>Address</th><th>Contact</th><th>Status</th><th>Quote</th><th>Last Email</th><th>Job Date</th><th>Notes</th><th></th></tr></thead><tbody>
+    ${rows.map(j=>`<tr><td><b>${esc(j.name)}</b></td><td>${esc(j.address)}</td>
+    <td>${j.email?`<a style="color:#4ade80" href="mailto:${esc(j.email)}">${esc(j.email)}</a>`:''}${j.phone?'<br>'+esc(j.phone):''}</td>
+    <td><span class="badge ${badge(j.status)}">${j.status}</span></td>
+    <td>${j.quote?'$'+Number(j.quote).toLocaleString():''}</td>
+    <td><span class="ago">${timeAgo(j.lastEmail)}</span><br><span class="ago">${j.lastEmail?new Date(j.lastEmail).toLocaleString():''}</span></td>
+    <td>${j.jobDate||''}</td><td>${esc(j.notes)}</td>
+    <td><button class="del" onclick="del(${j.i})" title="Delete">✕</button></td></tr>`).join('')}
+  </tbody></table>`;
+}
+function esc(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function del(i){if(confirm('Delete this job?')){jobs.splice(i,1);save();render();}}
+function exportCSV(){
+  const h=['Customer Name','Address','Email','Phone','Status','Quote Amount','Last Email Received','Job Date','Notes'];
+  const csv=[h].concat(jobs.map(j=>[j.name,j.address,j.email,j.phone,j.status,j.quote,j.lastEmail,j.jobDate,j.notes])).map(r=>r.map(v=>'"'+String(v||'').replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='gutter-genie-jobs.csv';a.click();
+}
+document.getElementById('jobForm').addEventListener('submit',e=>{e.preventDefault();
+  jobs.push({name:name.value,address:address.value,email:email.value,phone:phone.value,status:status.value,quote:quote.value,lastEmail:lastEmail.value,jobDate:jobDate.value,notes:notes.value});
+  save();e.target.reset();render();});
+render();
+</script>
+</body>
+</html>
