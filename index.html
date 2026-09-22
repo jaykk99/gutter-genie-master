@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gutter Genie — Master App</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',system-ui,sans-serif}
+body{background:#0b1f16;color:#e8f5ee;display:flex;height:100vh;overflow:hidden}
+.sidebar{width:280px;background:#0f2b1f;border-right:1px solid #1d4432;padding:20px;display:flex;flex-direction:column;gap:8px;overflow-y:auto}
+.logo{font-size:22px;font-weight:800;color:#4ade80;margin-bottom:14px}
+.logo span{color:#e8f5ee}
+.nav-btn{display:flex;align-items:center;gap:10px;width:100%;padding:12px 14px;background:transparent;border:1px solid transparent;border-radius:10px;color:#c9e8d6;font-size:14px;text-align:left;cursor:pointer;transition:.15s}
+.nav-btn:hover{background:#16402c}
+.nav-btn.active{background:#1d5b3c;border-color:#2f855a;color:#fff}
+.nav-btn .dot{width:8px;height:8px;border-radius:50%;background:#4ade80;flex-shrink:0}
+.main{flex:1;display:flex;flex-direction:column}
+.topbar{padding:14px 22px;border-bottom:1px solid #1d4432;display:flex;justify-content:space-between;align-items:center;background:#0f2b1f}
+.topbar h1{font-size:17px;font-weight:600}
+.topbar a{color:#4ade80;font-size:13px;text-decoration:none}
+.topbar a:hover{text-decoration:underline}
+.frame-wrap{flex:1;position:relative;background:#fff}
+iframe{width:100%;height:100%;border:0}
+.cards{padding:40px;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px;overflow-y:auto}
+.card{background:#123626;border:1px solid #1d4432;border-radius:14px;padding:20px;cursor:pointer;transition:.15s}
+.card:hover{border-color:#4ade80;transform:translateY(-2px)}
+.card h3{color:#fff;font-size:16px;margin-bottom:6px}
+.card p{color:#9dc7af;font-size:13px;line-height:1.5}
+.card .url{color:#4ade80;font-size:12px;margin-top:10px;word-break:break-all}
+.tag{display:inline-block;background:#1d5b3c;color:#a7f3c9;font-size:11px;padding:2px 8px;border-radius:20px;margin-bottom:8px}
+@media(max-width:768px){.sidebar{width:200px;padding:12px}.cards{padding:20px}}
+</style>
+</head>
+<body>
+<nav class="sidebar">
+  <div class="logo">🪠 Gutter <span>Genie</span></div>
+  <button class="nav-btn active" data-view="home"><span class="dot"></span>Home</button>
+  <button class="nav-btn" data-view="email"><span class="dot"></span>Email Notifications</button>
+  <button class="nav-btn" data-view="quote"><span class="dot"></span>ProQuote Estimator</button>
+  <button class="nav-btn" data-view="quotemcp"><span class="dot"></span>Quote Engine API</button>
+  <button class="nav-btn" data-view="media"><span class="dot"></span>Media Vault</button>
+  <button class="nav-btn" data-view="calls"><span class="dot"></span>Call Console</button>
+  <button class="nav-btn" data-view="site"><span class="dot"></span>Gutter Genie Site</button>
+  <button class="nav-btn" data-view="webworks"><span class="dot"></span>Winnipeg Web Works</button>
+</nav>
+<div class="main">
+  <div class="topbar"><h1 id="title">Master Dashboard</h1><a id="openExt" href="#" target="_blank">Open in new tab ↗</a></div>
+  <div class="frame-wrap" id="frameWrap">
+    <div class="cards" id="cards"></div>
+  </div>
+</div>
+<script>
+const APPS={
+  email:{name:'Email Notifications Dashboard',desc:'Unified inbox for Gutter Genie & Webworks emails — searchable, shows how long ago each email arrived.',url:'https://jaykk99.github.io/email-notifications-dashboard/'},
+  quote:{name:'ProQuote Estimator',desc:'Eavestrough quote generator — build and send customer quotes.',url:'https://proquote-estimator.vercel.app'},
+  quotemcp:{name:'Quote Engine API (MCP)',desc:'Connects job photos to notes, pricing and ready-to-send quotes.',url:'https://gutter-genie-quote-mcp.vercel.app'},
+  media:{name:'Media Vault',desc:'PIN-gated photo/video/file uploader organized by project.',url:'https://gutter-genie-media.vercel.app'},
+  calls:{name:'Call Console',desc:'Gutter Genie call handling console.',url:'https://guttergenie-call-console.vercel.app'},
+  site:{name:'Gutter Genie Site',desc:'Customer-facing Gutter Genie website.',url:'https://guttergenie.vercel.app'},
+  webworks:{name:'Winnipeg Web Works',desc:'Digital audit service landing page.',url:'https://winnipeg-web-works.vercel.app'}
+};
+const frameWrap=document.getElementById('frameWrap'),title=document.getElementById('title'),openExt=document.getElementById('openExt'),cards=document.getElementById('cards');
+function renderCards(){
+  cards.innerHTML=Object.entries(APPS).map(([k,a])=>`<div class="card" onclick="selectApp('${k}')"><span class="tag">App</span><h3>${a.name}</h3><p>${a.desc}</p><div class="url">${a.url}</div></div>`).join('');
+}
+function selectApp(k){
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.view===k));
+  const a=APPS[k];
+  title.textContent=a.name; openExt.href=a.url;
+  frameWrap.innerHTML=`<iframe src="${a.url}" title="${a.name}" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>`;
+}
+document.querySelectorAll('.nav-btn').forEach(b=>b.addEventListener('click',()=>{
+  const v=b.dataset.view;
+  document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');
+  if(v==='home'){title.textContent='Master Dashboard';openExt.href='#';frameWrap.innerHTML='';frameWrap.appendChild(cards);renderCards();}
+  else selectApp(v);
+}));
+renderCards();
+</script>
+</body>
+</html>
