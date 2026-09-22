@@ -21,7 +21,7 @@ body{background:#0b1f16;color:#e8f5ee;display:flex;height:100vh;overflow:hidden}
 .topbar a:hover{text-decoration:underline}
 .frame-wrap{flex:1;position:relative;background:#fff}
 iframe{width:100%;height:100%;border:0}
-.cards{padding:40px;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px;overflow-y:auto}
+.cards{padding:40px;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px;overflow-y:auto;background:#0b1f16;height:100%}
 .card{background:#123626;border:1px solid #1d4432;border-radius:14px;padding:20px;cursor:pointer;transition:.15s}
 .card:hover{border-color:#4ade80;transform:translateY(-2px)}
 .card h3{color:#fff;font-size:16px;margin-bottom:6px}
@@ -35,6 +35,7 @@ iframe{width:100%;height:100%;border:0}
 <nav class="sidebar">
   <div class="logo">🪠 Gutter <span>Genie</span></div>
   <button class="nav-btn active" data-view="home"><span class="dot"></span>Home</button>
+  <button class="nav-btn" data-view="jobs"><span class="dot"></span>📋 Jobs Tracker</button>
   <button class="nav-btn" data-view="email"><span class="dot"></span>Email Notifications</button>
   <button class="nav-btn" data-view="quote"><span class="dot"></span>ProQuote Estimator</button>
   <button class="nav-btn" data-view="quotemcp"><span class="dot"></span>Quote Engine API</button>
@@ -51,6 +52,7 @@ iframe{width:100%;height:100%;border:0}
 </div>
 <script>
 const APPS={
+  jobs:{name:'Jobs Tracker',desc:'Searchable job log — customer names, addresses, emails, quotes, statuses, and how long ago each email arrived. Syncs with Notion.',url:'jobs.html'},
   email:{name:'Email Notifications Dashboard',desc:'Unified inbox for Gutter Genie & Webworks emails — searchable, shows how long ago each email arrived.',url:'https://jaykk99.github.io/email-notifications-dashboard/'},
   quote:{name:'ProQuote Estimator',desc:'Eavestrough quote generator — build and send customer quotes.',url:'https://proquote-estimator.vercel.app'},
   quotemcp:{name:'Quote Engine API (MCP)',desc:'Connects job photos to notes, pricing and ready-to-send quotes.',url:'https://gutter-genie-quote-mcp.vercel.app'},
