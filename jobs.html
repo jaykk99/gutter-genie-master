@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Jobs Tracker — Gutter Genie</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',system-ui,sans-serif}
 body{background:#0b1f16;color:#e8f5ee;min-height:100vh;padding:24px}
@@ -12,6 +13,8 @@ header{display:flex;justify-content:space-between;align-items:center;flex-wrap:w
 h1{color:#4ade80;font-size:24px}
 .back{color:#9dc7af;text-decoration:none;font-size:14px}
 .back:hover{color:#fff}
+#syncStatus{font-size:12px;color:#9dc7af}
+#syncStatus.ok{color:#4ade80}#syncStatus.err{color:#f87171}
 .search-row{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap}
 input,select,textarea{background:#0f2b1f;border:1px solid #1d4432;color:#e8f5ee;padding:10px 12px;border-radius:8px;font-size:14px;outline:none}
 input:focus,select:focus{border-color:#4ade80}
@@ -29,7 +32,7 @@ tr:hover td{background:#123626}
 .ago{color:#9dc7af;font-size:12px}
 .del{background:none;border:none;color:#f87171;cursor:pointer;padding:2px 6px}
 .empty{text-align:center;color:#9dc7af;padding:40px}
-.actions{display:flex;gap:10px;flex-wrap:wrap}
+.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 a.btn{background:#1d5b3c;border:1px solid #2f855a;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;font-size:14px}
 </style>
 </head>
@@ -38,7 +41,8 @@ a.btn{background:#1d5b3c;border:1px solid #2f855a;color:#fff;padding:10px 16px;b
 <header>
   <h1>🪠 Jobs Tracker</h1>
   <div class="actions">
-    <a class="btn" href="https://www.notion.so/3e3bc778e6858176a26fc36e57527f8d" target="_blank">Open in Notion ↗</a>
+    <span id="syncStatus">connecting…</span>
+    <a class="btn" href="https://www.notion.so/3e3bc778e6858176a26fc36e57527f8d" target="_blank">Notion ↗</a>
     <a class="back" href="index.html">← Master App</a>
   </div>
 </header>
@@ -65,42 +69,59 @@ a.btn{background:#1d5b3c;border:1px solid #2f855a;color:#fff;padding:10px 16px;b
 <div id="list"></div>
 </div>
 <script>
-const KEY='gg_jobs';
-let jobs=JSON.parse(localStorage.getItem(KEY)||'[]');
-function save(){localStorage.setItem(KEY,JSON.stringify(jobs));}
+const SB_URL='https://fhbqxujlnqlmzvulrdxt.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoYnF4dWpsbnFsbXp2dWxyZHh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc2MTc0NDQsImV4cCI6MjEwMzE5MzQ0NH0.ThFmY_FXQlnaaI8GNLz9xSHATOacM9iOb8u0G0WFJ2w';
+const sb=supabase.createClient(SB_URL,SB_KEY);
+let jobs=[];
+const syncEl=document.getElementById('syncStatus');
+function setSync(t,c){syncEl.textContent=t;syncEl.className=c||'';}
+async function load(){
+  const {data,error}=await sb.from('gg_jobs').select('*').order('last_email_received',{ascending:false,nullsFirst:false});
+  if(error){setSync('⚠ offline mode','err');jobs=JSON.parse(localStorage.getItem('gg_jobs')||'[]');}
+  else{jobs=data||[];setSync('✅ synced with cloud ('+jobs.length+' jobs)','ok');}
+  render();
+}
 function timeAgo(d){if(!d)return'';const s=(Date.now()-new Date(d).getTime())/1e3;
  if(s<60)return'just now';if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';
  if(s<604800)return Math.floor(s/86400)+'d ago';return Math.floor(s/604800)+'w ago';}
-function badge(s){return 'b-'+s.toLowerCase();}
+function badge(s){return 'b-'+(s||'lead').toLowerCase();}
 function render(){
   const q=document.getElementById('search').value.toLowerCase(),fs=document.getElementById('fStatus').value;
   const rows=jobs.map((j,i)=>({...j,i})).filter(j=>{
     if(fs&&j.status!==fs)return false;
-    return !q||[j.name,j.address,j.email,j.phone,j.notes].join(' ').toLowerCase().includes(q);
-  }).sort((a,b)=>(b.lastEmail||'')-(a.lastEmail||'')||0);
+    return !q||[j.customer_name||j.name,j.address,j.email,j.phone,j.notes].join(' ').toLowerCase().includes(q);
+  });
   if(!rows.length){document.getElementById('list').innerHTML='<div class="empty">No jobs found. Add your first job above 👆</div>';return;}
   document.getElementById('list').innerHTML=`<table><thead><tr>
     <th>Customer</th><th>Address</th><th>Contact</th><th>Status</th><th>Quote</th><th>Last Email</th><th>Job Date</th><th>Notes</th><th></th></tr></thead><tbody>
-    ${rows.map(j=>`<tr><td><b>${esc(j.name)}</b></td><td>${esc(j.address)}</td>
+    ${rows.map(j=>{const nm=j.customer_name||j.name,le=j.last_email_received||j.lastEmail,qa=j.quote_amount||j.quote,jd=j.job_date||j.jobDate;return `<tr><td><b>${esc(nm)}</b></td><td>${esc(j.address)}</td>
     <td>${j.email?`<a style="color:#4ade80" href="mailto:${esc(j.email)}">${esc(j.email)}</a>`:''}${j.phone?'<br>'+esc(j.phone):''}</td>
     <td><span class="badge ${badge(j.status)}">${j.status}</span></td>
-    <td>${j.quote?'$'+Number(j.quote).toLocaleString():''}</td>
-    <td><span class="ago">${timeAgo(j.lastEmail)}</span><br><span class="ago">${j.lastEmail?new Date(j.lastEmail).toLocaleString():''}</span></td>
-    <td>${j.jobDate||''}</td><td>${esc(j.notes)}</td>
-    <td><button class="del" onclick="del(${j.i})" title="Delete">✕</button></td></tr>`).join('')}
+    <td>${qa?'$'+Number(qa).toLocaleString():''}</td>
+    <td><span class="ago">${timeAgo(le)}</span><br><span class="ago">${le?new Date(le).toLocaleString():''}</span></td>
+    <td>${jd||''}</td><td>${esc(j.notes)}</td>
+    <td><button class="del" onclick="del(${j.i})" title="Delete">✕</button></td></tr>`;}).join('')}
   </tbody></table>`;
 }
 function esc(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
-function del(i){if(confirm('Delete this job?')){jobs.splice(i,1);save();render();}}
+async function del(i){const j=jobs[i];if(!confirm('Delete '+(j.customer_name||j.name)+'?'))return;
+  if(j.id){const{error}=await sb.from('gg_jobs').delete().eq('id',j.id);if(error)setSync('⚠ delete failed','err');}
+  jobs.splice(i,1);render();}
 function exportCSV(){
   const h=['Customer Name','Address','Email','Phone','Status','Quote Amount','Last Email Received','Job Date','Notes'];
-  const csv=[h].concat(jobs.map(j=>[j.name,j.address,j.email,j.phone,j.status,j.quote,j.lastEmail,j.jobDate,j.notes])).map(r=>r.map(v=>'"'+String(v||'').replace(/"/g,'""')+'"').join(',')).join('\n');
+  const csv=[h].concat(jobs.map(j=>[j.customer_name||j.name,j.address,j.email,j.phone,j.status,j.quote_amount||j.quote,j.last_email_received||j.lastEmail,j.job_date||j.jobDate,j.notes])).map(r=>r.map(v=>'"'+String(v||'').replace(/"/g,'""')+'"').join(',')).join('\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='gutter-genie-jobs.csv';a.click();
 }
-document.getElementById('jobForm').addEventListener('submit',e=>{e.preventDefault();
-  jobs.push({name:name.value,address:address.value,email:email.value,phone:phone.value,status:status.value,quote:quote.value,lastEmail:lastEmail.value,jobDate:jobDate.value,notes:notes.value});
-  save();e.target.reset();render();});
-render();
+document.getElementById('jobForm').addEventListener('submit',async e=>{e.preventDefault();
+  const row={customer_name:name.value,address:address.value||null,email:email.value||null,phone:phone.value||null,status:status.value,
+    quote_amount:quote.value?Number(quote.value):null,last_email_received:lastEmail.value?new Date(lastEmail.value).toISOString():null,
+    job_date:jobDate.value||null,notes:notes.value||null};
+  const{data,error}=await sb.from('gg_jobs').insert(row).select();
+  if(error){setSync('⚠ save failed — check connection','err');return;}
+  jobs.unshift(data[0]);setSync('✅ synced with cloud ('+jobs.length+' jobs)','ok');e.target.reset();render();});
+load();
+// Realtime: update live if jobs are added elsewhere
+sb.channel('gg_jobs_rt').on('postgres_changes',{event:'*',schema:'public',table:'gg_jobs'},()=>load()).subscribe();
 </script>
 </body>
 </html>
