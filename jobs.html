@@ -27,8 +27,8 @@ table{width:100%;border-collapse:collapse;background:#0f2b1f;border-radius:12px;
 th,td{padding:12px 14px;text-align:left;font-size:14px;border-bottom:1px solid #1d4432}
 th{background:#123626;color:#4ade80;font-size:12px;text-transform:uppercase;letter-spacing:.5px}
 tr:hover td{background:#123626}
-.badge{padding:3px 10px;border-radius:20px;font-size:12px;white-space:nowrap}
-.b-lead{background:#3b3b1d;color:#fde047}.b-quoted{background:#1e3a5f;color:#60a5fa}.b-scheduled{background:#3a2a5f;color:#c084fc}.b-done{background:#1d5b3c;color:#4ade80}.b-paid{background:#0f3d2e;color:#34d399}
+.badge{padding:3px 10px;border-radius:20px;font-size:12px;white-space:nowrap;text-transform:capitalize}
+.b-new{background:#3b3b1d;color:#fde047}.b-quoted{background:#1e3a5f;color:#60a5fa}.b-scheduled{background:#3a2a5f;color:#c084fc}.b-completed{background:#1d5b3c;color:#4ade80}.b-paid{background:#0f3d2e;color:#34d399}
 .ago{color:#9dc7af;font-size:12px}
 .del{background:none;border:none;color:#f87171;cursor:pointer;padding:2px 6px}
 .empty{text-align:center;color:#9dc7af;padding:40px}
@@ -47,22 +47,20 @@ a.btn{background:#1d5b3c;border:1px solid #2f855a;color:#fff;padding:10px 16px;b
   </div>
 </header>
 <div class="search-row">
-  <input id="search" placeholder="🔍 Search name, address, email, phone, notes…" oninput="render()">
+  <input id="search" placeholder="🔍 Search name, address, zone, phone, notes…" oninput="render()">
   <select id="fStatus" onchange="render()">
-    <option value="">All statuses</option><option>Lead</option><option>Quoted</option><option>Scheduled</option><option>Done</option><option>Paid</option>
+    <option value="">All statuses</option><option value="new">New</option><option value="quoted">Quoted</option><option value="scheduled">Scheduled</option><option value="completed">Completed</option><option value="paid">Paid</option>
   </select>
   <button onclick="exportCSV()">Export CSV</button>
 </div>
 <form id="jobForm">
   <h2>➕ Add Job</h2>
-  <input id="name" placeholder="Customer Name *" required>
+  <input id="customer" placeholder="Customer Name *" required>
   <input id="address" placeholder="Address">
-  <input id="email" type="email" placeholder="Email">
+  <input id="zone" placeholder="Zone (e.g. Winnipeg, Steinbach)">
   <input id="phone" placeholder="Phone">
-  <select id="status"><option>Lead</option><option>Quoted</option><option>Scheduled</option><option>Done</option><option>Paid</option></select>
-  <input id="quote" type="number" step="0.01" placeholder="Quote Amount ($)">
-  <input id="lastEmail" type="datetime-local" title="Last email received">
-  <input id="jobDate" type="date" title="Job date">
+  <select id="status"><option value="new">New</option><option value="quoted">Quoted</option><option value="scheduled">Scheduled</option><option value="completed">Completed</option><option value="paid">Paid</option></select>
+  <input id="quoteAmt" type="number" step="0.01" placeholder="Quote Amount ($)">
   <input id="notes" placeholder="Notes" style="grid-column:1/-1">
   <button type="submit">Save Job</button>
 </form>
@@ -76,52 +74,52 @@ let jobs=[];
 const syncEl=document.getElementById('syncStatus');
 function setSync(t,c){syncEl.textContent=t;syncEl.className=c||'';}
 async function load(){
-  const {data,error}=await sb.from('gg_jobs').select('*').order('last_email_received',{ascending:false,nullsFirst:false});
-  if(error){setSync('⚠ offline mode','err');jobs=JSON.parse(localStorage.getItem('gg_jobs')||'[]');}
+  const {data,error}=await sb.from('gg_projects').select('*').order('updated_at',{ascending:false,nullsFirst:false});
+  if(error){setSync('⚠ offline mode','err');jobs=JSON.parse(localStorage.getItem('gg_projects')||'[]');}
   else{jobs=data||[];setSync('✅ synced with cloud ('+jobs.length+' jobs)','ok');}
   render();
 }
 function timeAgo(d){if(!d)return'';const s=(Date.now()-new Date(d).getTime())/1e3;
  if(s<60)return'just now';if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';
  if(s<604800)return Math.floor(s/86400)+'d ago';return Math.floor(s/604800)+'w ago';}
-function badge(s){return 'b-'+(s||'lead').toLowerCase();}
+function badge(s){return 'b-'+(s||'new').toLowerCase();}
+function quoteTotal(j){return j.quote&&j.quote.total!=null?Number(j.quote.total):null;}
 function render(){
   const q=document.getElementById('search').value.toLowerCase(),fs=document.getElementById('fStatus').value;
   const rows=jobs.map((j,i)=>({...j,i})).filter(j=>{
-    if(fs&&j.status!==fs)return false;
-    return !q||[j.customer_name||j.name,j.address,j.email,j.phone,j.notes].join(' ').toLowerCase().includes(q);
+    if(fs&&(j.status||'').toLowerCase()!==fs)return false;
+    return !q||[j.customer,j.address,j.zone,j.phone,j.notes].join(' ').toLowerCase().includes(q);
   });
   if(!rows.length){document.getElementById('list').innerHTML='<div class="empty">No jobs found. Add your first job above 👆</div>';return;}
   document.getElementById('list').innerHTML=`<table><thead><tr>
-    <th>Customer</th><th>Address</th><th>Contact</th><th>Status</th><th>Quote</th><th>Last Email</th><th>Job Date</th><th>Notes</th><th></th></tr></thead><tbody>
-    ${rows.map(j=>{const nm=j.customer_name||j.name,le=j.last_email_received||j.lastEmail,qa=j.quote_amount||j.quote,jd=j.job_date||j.jobDate;return `<tr><td><b>${esc(nm)}</b></td><td>${esc(j.address)}</td>
-    <td>${j.email?`<a style="color:#4ade80" href="mailto:${esc(j.email)}">${esc(j.email)}</a>`:''}${j.phone?'<br>'+esc(j.phone):''}</td>
-    <td><span class="badge ${badge(j.status)}">${j.status}</span></td>
-    <td>${qa?'$'+Number(qa).toLocaleString():''}</td>
-    <td><span class="ago">${timeAgo(le)}</span><br><span class="ago">${le?new Date(le).toLocaleString():''}</span></td>
-    <td>${jd||''}</td><td>${esc(j.notes)}</td>
+    <th>Customer</th><th>Address</th><th>Zone</th><th>Phone</th><th>Status</th><th>Quote</th><th>Updated</th><th>Notes</th><th></th></tr></thead><tbody>
+    ${rows.map(j=>{const qa=quoteTotal(j);return `<tr><td><b>${esc(j.customer)}</b></td><td>${esc(j.address)}</td><td>${esc(j.zone)}</td>
+    <td>${j.phone?esc(j.phone):''}</td>
+    <td><span class="badge ${badge(j.status)}">${j.status||'new'}</span></td>
+    <td>${qa!=null?'$'+qa.toLocaleString():''}</td>
+    <td><span class="ago">${timeAgo(j.updated_at||j.created_at)}</span><br><span class="ago">${(j.updated_at||j.created_at)?new Date(j.updated_at||j.created_at).toLocaleDateString():''}</span></td>
+    <td>${esc(j.notes)}</td>
     <td><button class="del" onclick="del(${j.i})" title="Delete">✕</button></td></tr>`;}).join('')}
   </tbody></table>`;
 }
 function esc(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
-async function del(i){const j=jobs[i];if(!confirm('Delete '+(j.customer_name||j.name)+'?'))return;
-  if(j.id){const{error}=await sb.from('gg_jobs').delete().eq('id',j.id);if(error)setSync('⚠ delete failed','err');}
+async function del(i){const j=jobs[i];if(!confirm('Delete '+(j.customer||'this job')+'?'))return;
+  if(j.id){const{error}=await sb.from('gg_projects').delete().eq('id',j.id);if(error)setSync('⚠ delete failed','err');}
   jobs.splice(i,1);render();}
 function exportCSV(){
-  const h=['Customer Name','Address','Email','Phone','Status','Quote Amount','Last Email Received','Job Date','Notes'];
-  const csv=[h].concat(jobs.map(j=>[j.customer_name||j.name,j.address,j.email,j.phone,j.status,j.quote_amount||j.quote,j.last_email_received||j.lastEmail,j.job_date||j.jobDate,j.notes])).map(r=>r.map(v=>'"'+String(v||'').replace(/"/g,'""')+'"').join(',')).join('\n');
+  const h=['Customer','Address','Zone','Phone','Status','Quote Total','Quote Text','Created','Updated','Notes'];
+  const csv=[h].concat(jobs.map(j=>[j.customer,j.address,j.zone,j.phone,j.status,quoteTotal(j),j.quote_text,j.created_at,j.updated_at,j.notes])).map(r=>r.map(v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"').join(',')).join('\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='gutter-genie-jobs.csv';a.click();
 }
 document.getElementById('jobForm').addEventListener('submit',async e=>{e.preventDefault();
-  const row={customer_name:name.value,address:address.value||null,email:email.value||null,phone:phone.value||null,status:status.value,
-    quote_amount:quote.value?Number(quote.value):null,last_email_received:lastEmail.value?new Date(lastEmail.value).toISOString():null,
-    job_date:jobDate.value||null,notes:notes.value||null};
-  const{data,error}=await sb.from('gg_jobs').insert(row).select();
+  const row={customer:customer.value,address:address.value||null,zone:zone.value||null,phone:phone.value||null,status:status.value,
+    quote:quoteAmt.value?{total:Number(quoteAmt.value)}:null,notes:notes.value||null};
+  const{data,error}=await sb.from('gg_projects').insert(row).select();
   if(error){setSync('⚠ save failed — check connection','err');return;}
   jobs.unshift(data[0]);setSync('✅ synced with cloud ('+jobs.length+' jobs)','ok');e.target.reset();render();});
 load();
 // Realtime: update live if jobs are added elsewhere
-sb.channel('gg_jobs_rt').on('postgres_changes',{event:'*',schema:'public',table:'gg_jobs'},()=>load()).subscribe();
+sb.channel('gg_projects_rt').on('postgres_changes',{event:'*',schema:'public',table:'gg_projects'},()=>load()).subscribe();
 </script>
 </body>
 </html>
