@@ -80,7 +80,7 @@ iframe{width:100%;height:100%;border:0}
 </div>
 <script>
 const APPS={
-  jobs:{name:'Jobs Tracker',desc:'Searchable job log — customer names, addresses, emails, quotes, statuses, and how long ago each email arrived. Syncs with Notion.',url:'jobs.html'},
+  jobs:{name:'Jobs Tracker',desc:'Searchable job log — customer names, addresses, zones, quotes, and statuses, live from Supabase. Syncs with Notion.',url:'jobs.html'},
   email:{name:'Email Notifications Dashboard',desc:'Unified inbox for Gutter Genie & Webworks emails — searchable, shows how long ago each email arrived.',url:'https://jaykk99.github.io/email-notifications-dashboard/'},
   quote:{name:'ProQuote Estimator',desc:'Eavestrough quote generator — build and send customer quotes.',url:'https://proquote-estimator.vercel.app'},
   quotemcp:{name:'Quote Engine API (MCP)',desc:'Connects job photos to notes, pricing and ready-to-send quotes.',url:'https://gutter-genie-quote-mcp.vercel.app'},
@@ -129,25 +129,23 @@ try{ sb=supabase.createClient(SB_URL,SB_KEY); }catch(e){}
 async function loadStats(){
   if(!sb){statsEl.innerHTML='';return;}
   try{
-    const {data,error}=await sb.from('gg_jobs').select('status,quote_amount');
+    const {data,error}=await sb.from('gg_projects').select('status,quote');
     if(error||!data){statsEl.innerHTML='';return;}
-    const counts={Lead:0,Quoted:0,Scheduled:0,Done:0,Paid:0};
-    let paidTotal=0,pipelineTotal=0;
-    data.forEach(j=>{
-      const s=j.status||'Lead';
-      if(counts[s]!==undefined)counts[s]++;
-      const amt=Number(j.quote_amount)||0;
-      if(s==='Paid')paidTotal+=amt; else pipelineTotal+=amt;
+    const counts={};
+    let totalValue=0;
+    data.forEach(p=>{
+      const s=(p.status||'new').toLowerCase();
+      counts[s]=(counts[s]||0)+1;
+      const amt=p.quote&&p.quote.total!=null?Number(p.quote.total):0;
+      totalValue+=amt;
     });
     const money=n=>'$'+Math.round(n).toLocaleString();
-    statsEl.innerHTML=`
-      <div class="stat-card"><div class="n">${counts.Lead}</div><div class="l">Leads</div></div>
-      <div class="stat-card"><div class="n">${counts.Quoted}</div><div class="l">Quoted</div></div>
-      <div class="stat-card"><div class="n">${counts.Scheduled}</div><div class="l">Scheduled</div></div>
-      <div class="stat-card"><div class="n">${counts.Done}</div><div class="l">Done</div></div>
-      <div class="stat-card"><div class="n">${counts.Paid}</div><div class="l">Paid</div></div>
-      <div class="stat-card money"><div class="n">${money(paidTotal)}</div><div class="l">Paid total</div></div>
-      <div class="stat-card money"><div class="n">${money(pipelineTotal)}</div><div class="l">In pipeline</div></div>`;
+    const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+    let cards=Object.keys(counts).sort().map(s=>
+      `<div class="stat-card"><div class="n">${counts[s]}</div><div class="l">${cap(s)}</div></div>`).join('');
+    cards+=`<div class="stat-card"><div class="n">${data.length}</div><div class="l">Total Jobs</div></div>`;
+    cards+=`<div class="stat-card money"><div class="n">${money(totalValue)}</div><div class="l">Total quoted</div></div>`;
+    statsEl.innerHTML=cards;
   }catch(e){statsEl.innerHTML='';}
 }
 renderCards();
