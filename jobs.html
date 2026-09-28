@@ -69,13 +69,19 @@ a.btn{background:#1d5b3c;border:1px solid #2f855a;color:#fff;padding:10px 16px;b
 <script>
 const SB_URL='https://fhbqxujlnqlmzvulrdxt.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoYnF4dWpsbnFsbXp2dWxyZHh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc2MTc0NDQsImV4cCI6MjEwMzE5MzQ0NH0.ThFmY_FXQlnaaI8GNLz9xSHATOacM9iOb8u0G0WFJ2w';
-const sb=supabase.createClient(SB_URL,SB_KEY);
+// Public anon key (safe for browsers). May be null if the Supabase CDN failed to load.
+let sb=null;
+try{ sb=supabase.createClient(SB_URL,SB_KEY); }catch(e){ sb=null; }
+const LOCAL_KEY='gg_projects';
+const readLocal=()=>{try{return JSON.parse(localStorage.getItem(LOCAL_KEY)||'[]');}catch(e){return[];}};
+const writeLocal=(rows)=>{try{localStorage.setItem(LOCAL_KEY,JSON.stringify(rows));}catch(e){}};
 let jobs=[];
 const syncEl=document.getElementById('syncStatus');
 function setSync(t,c){syncEl.textContent=t;syncEl.className=c||'';}
 async function load(){
+  if(!sb){ setSync('⚠ offline mode (cloud unreachable)','err'); jobs=readLocal(); render(); return; }
   const {data,error}=await sb.from('gg_projects').select('*').order('updated_at',{ascending:false,nullsFirst:false});
-  if(error){setSync('⚠ offline mode','err');jobs=JSON.parse(localStorage.getItem('gg_projects')||'[]');}
+  if(error){setSync('⚠ offline mode','err');jobs=readLocal();}
   else{jobs=data||[];setSync('✅ synced with cloud ('+jobs.length+' jobs)','ok');}
   render();
 }
@@ -104,8 +110,8 @@ function render(){
 }
 function esc(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 async function del(i){const j=jobs[i];if(!confirm('Delete '+(j.customer||'this job')+'?'))return;
-  if(j.id){const{error}=await sb.from('gg_projects').delete().eq('id',j.id);if(error)setSync('⚠ delete failed','err');}
-  jobs.splice(i,1);render();}
+  if(j.id&&sb){const{error}=await sb.from('gg_projects').delete().eq('id',j.id);if(error)setSync('⚠ delete failed','err');}
+  jobs.splice(i,1);if(!sb)writeLocal(jobs);render();}
 function exportCSV(){
   const h=['Customer','Address','Zone','Phone','Status','Quote Total','Quote Text','Created','Updated','Notes'];
   const csv=[h].concat(jobs.map(j=>[j.customer,j.address,j.zone,j.phone,j.status,quoteTotal(j),j.quote_text,j.created_at,j.updated_at,j.notes])).map(r=>r.map(v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"').join(',')).join('\n');
@@ -114,12 +120,16 @@ function exportCSV(){
 document.getElementById('jobForm').addEventListener('submit',async e=>{e.preventDefault();
   const row={customer:customer.value,address:address.value||null,zone:zone.value||null,phone:phone.value||null,status:status.value,
     quote:quoteAmt.value?{total:Number(quoteAmt.value)}:null,notes:notes.value||null};
+  if(!sb){ // offline: keep a local copy so the job isn't lost
+    row.id='local-'+Date.now();row.created_at=new Date().toISOString();row.updated_at=row.created_at;
+    jobs.unshift(row);writeLocal(jobs);setSync('⚠ saved locally (offline)','err');e.target.reset();render();return;
+  }
   const{data,error}=await sb.from('gg_projects').insert(row).select();
   if(error){setSync('⚠ save failed — check connection','err');return;}
   jobs.unshift(data[0]);setSync('✅ synced with cloud ('+jobs.length+' jobs)','ok');e.target.reset();render();});
 load();
 // Realtime: update live if jobs are added elsewhere
-sb.channel('gg_projects_rt').on('postgres_changes',{event:'*',schema:'public',table:'gg_projects'},()=>load()).subscribe();
+if(sb) sb.channel('gg_projects_rt').on('postgres_changes',{event:'*',schema:'public',table:'gg_projects'},()=>load()).subscribe();
 </script>
 </body>
 </html>
