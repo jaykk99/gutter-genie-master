@@ -104,6 +104,10 @@ body{background:var(--bg);color:var(--text);display:flex;height:100vh;overflow:h
 [hidden]{display:none!important}
 
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:15}
+.services{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin-bottom:28px}
+.service{background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;font-size:13.5px;line-height:1.5}
+.service b{color:#fff}
+.service span{color:var(--muted);font-size:12.5px}
 .foot-note{text-align:center;color:#5b7d68;font-size:12px;padding:20px 0 4px}
 
 @media(max-width:900px){
@@ -188,6 +192,8 @@ function showHome(){
         <a class="qbtn primary" href="tel:${PHONE}">📞 ${PHONE}</a>
         <a class="qbtn" href="mailto:${EMAIL}">✉️ Email</a>
         <button class="qbtn" id="qaQuote">💲 New Quote</button>
+        <button class="qbtn" id="qaPhotos">🖼️ Upload job photos</button>
+        <button class="qbtn" id="qaCalls">📞 Call console</button>
         <button class="qbtn" id="qaJob">➕ New Job</button>
       </div>
     </div>
@@ -197,9 +203,20 @@ function showHome(){
     <div class="stats" id="stats"></div>
     <div class="tools-head">Tools</div>
     <div class="cards" id="cards"></div>
+    <div class="tools-head">Services</div>
+    <div class="services">
+      <div class="service">🧹 <b>Gutter cleaning</b><br><span>Full cleanout — debris removal and flush-through.</span></div>
+      <div class="service">🚿 <b>Downspout clearing</b><br><span>Unblock clogs, check flow at the ground.</span></div>
+      <div class="service">🛡️ <b>Guard installation</b><br><span>Leaf guards to cut future maintenance.</span></div>
+      <div class="service">🔧 <b>Hanger &amp; clip repair</b><br><span>Re-secure sagging or loose sections.</span></div>
+      <div class="service">🏠 <b>Gutter replacement</b><br><span>Full replacement when repair won't cut it.</span></div>
+      <div class="service">🔍 <b>Free inspections</b><br><span>On-site look before any quote, no charge.</span></div>
+    </div>
     <div class="foot-note">Gutter Genie · ${PHONE} · ${EMAIL}</div>
   </div>`;
   document.getElementById('qaQuote').addEventListener('click',()=>selectApp('quote'));
+  document.getElementById('qaPhotos').addEventListener('click',()=>selectApp('media'));
+  document.getElementById('qaCalls').addEventListener('click',()=>selectApp('calls'));
   document.getElementById('qaJob').addEventListener('click',()=>selectApp('jobs'));
   document.getElementById('refreshStats').addEventListener('click',loadStats);
   renderCards();loadStats();checkHealth();
