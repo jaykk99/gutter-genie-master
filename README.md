@@ -12,11 +12,14 @@ Pure static HTML — no build step, no dependencies to install. Vercel serves
 
 - `index.html` — Business Hub. Home view with live job stats (skeleton
   loaders, last-synced timestamp, refresh, error state with retry), quick
-  actions (call, email, new quote, new job), and app cards with per-app
-  link-health status dots (reachable / unreachable / unknown). Sidebar nav
-  loads each app in a sandboxed iframe with a loading spinner and a
-  "taking too long" error bar (retry + open-in-new-tab). Online/offline
-  indicator in the topbar.
+  actions (call, email, new quote, upload job photos, call console shortcut,
+  new job), app cards with per-app link-health status dots
+  (reachable / unreachable / unknown), and a Services list (cleaning,
+  downspout clearing, guard install, hanger/clip repair, replacement, free
+  inspections) plus contact info (204-972-0325, guttergeinie@gmail.com).
+  Sidebar nav loads each app in a sandboxed iframe with a loading spinner
+  and a "taking too long" error bar (retry + open-in-new-tab).
+  Online/offline indicator in the topbar. Mobile-first layout.
 - `jobs.html` — Jobs Tracker. Searchable job log (customer, address, zone,
   phone, status, quote, notes) reading the `gg_projects` Supabase table, with
   realtime updates, CSV export, tappable phone numbers, and a Notion link.
