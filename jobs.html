@@ -4,45 +4,63 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Jobs Tracker — Gutter Genie</title>
+<meta name="theme-color" content="#0a1a12">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%8B%3C/text%3E%3C/svg%3E">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',system-ui,sans-serif}
-body{background:#0b1f16;color:#e8f5ee;min-height:100vh;padding:24px}
+:root{--bg:#0a1a12;--panel:#0f2b1f;--panel2:#123626;--border:#1d4432;--green:#4ade80;--green-dim:#2f855a;--text:#e8f5ee;--muted:#9dc7af;--red:#f87171;--amber:#fbbf24;--blue:#60a5fa;--purple:#c084fc;--radius:12px}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',system-ui,-apple-system,sans-serif}
+body{background:var(--bg);color:var(--text);min-height:100vh;padding:24px;-webkit-tap-highlight-color:transparent}
 .wrap{max-width:1100px;margin:0 auto}
-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px}
-h1{color:#4ade80;font-size:24px}
-.back{color:#9dc7af;text-decoration:none;font-size:14px}
+header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:18px}
+h1{color:var(--green);font-size:24px;letter-spacing:-.3px}
+.back{color:var(--muted);text-decoration:none;font-size:14px}
 .back:hover{color:#fff}
-#syncStatus{font-size:12px;color:#9dc7af}
-#syncStatus.ok{color:#4ade80}#syncStatus.err{color:#f87171}
-.search-row{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap}
-input,select,textarea{background:#0f2b1f;border:1px solid #1d4432;color:#e8f5ee;padding:10px 12px;border-radius:8px;font-size:14px;outline:none}
-input:focus,select:focus{border-color:#4ade80}
-#search{flex:1;min-width:220px}
-button{background:#1d5b3c;border:1px solid #2f855a;color:#fff;padding:10px 16px;border-radius:8px;cursor:pointer;font-size:14px}
-button:hover{background:#247248}
-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;background:#0f2b1f;border:1px solid #1d4432;border-radius:14px;padding:18px;margin-bottom:22px}
-form h2{grid-column:1/-1;font-size:16px;color:#c9e8d6}
-table{width:100%;border-collapse:collapse;background:#0f2b1f;border-radius:12px;overflow:hidden}
-th,td{padding:12px 14px;text-align:left;font-size:14px;border-bottom:1px solid #1d4432}
-th{background:#123626;color:#4ade80;font-size:12px;text-transform:uppercase;letter-spacing:.5px}
-tr:hover td{background:#123626}
-.badge{padding:3px 10px;border-radius:20px;font-size:12px;white-space:nowrap;text-transform:capitalize}
-.b-new{background:#3b3b1d;color:#fde047}.b-quoted{background:#1e3a5f;color:#60a5fa}.b-scheduled{background:#3a2a5f;color:#c084fc}.b-completed{background:#1d5b3c;color:#4ade80}.b-paid{background:#0f3d2e;color:#34d399}
-.ago{color:#9dc7af;font-size:12px}
-.del{background:none;border:none;color:#f87171;cursor:pointer;padding:2px 6px}
-.empty{text-align:center;color:#9dc7af;padding:40px}
+.syncbox{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--muted);background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:8px 14px}
+#syncDot{width:9px;height:9px;border-radius:50%;background:var(--amber)}
+#syncDot.ok{background:var(--green);box-shadow:0 0 7px rgba(74,222,128,.7)}
+#syncDot.err{background:var(--red)}
+#retryBtn{display:none;background:none;border:1px solid var(--border);color:var(--green);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer}
+#retryBtn.show{display:inline-block}
 .actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-a.btn{background:#1d5b3c;border:1px solid #2f855a;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;font-size:14px}
+.search-row{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap}
+input,select,textarea{background:var(--panel);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:8px;font-size:14px;outline:none;font-family:inherit}
+input:focus,select:focus{border-color:var(--green)}
+#search{flex:1;min-width:220px}
+button{background:#1d5b3c;border:1px solid var(--green-dim);color:#fff;padding:10px 16px;border-radius:8px;cursor:pointer;font-size:14px;font-family:inherit;transition:.15s}
+button:hover{background:#247248}
+button:disabled{opacity:.5;cursor:default}
+form{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:22px}
+form h2{grid-column:1/-1;font-size:16px;color:#c9e8d6}
+.table-scroll{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;background:var(--panel);min-width:760px}
+th,td{padding:12px 14px;text-align:left;font-size:14px;border-bottom:1px solid var(--border);vertical-align:top}
+th{background:var(--panel2);color:var(--green);font-size:12px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+tbody tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--panel2)}
+.badge{padding:3px 10px;border-radius:20px;font-size:12px;white-space:nowrap;text-transform:capitalize}
+.b-new{background:#3b3b1d;color:#fde047}.b-quoted{background:#1e3a5f;color:var(--blue)}.b-scheduled{background:#3a2a5f;color:var(--purple)}.b-completed{background:#1d5b3c;color:var(--green)}.b-paid{background:#0f3d2e;color:#34d399}
+.ago{color:var(--muted);font-size:12px;white-space:nowrap}
+.del{background:none;border:none;color:var(--red);cursor:pointer;padding:2px 6px;font-size:14px}
+.empty{text-align:center;color:var(--muted);padding:44px 20px;line-height:1.7}
+.empty button{margin-top:10px}
+a.btn{background:#1d5b3c;border:1px solid var(--green-dim);color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;font-size:14px;display:inline-block}
+.skel-row td{padding:16px 14px}
+.skel{display:block;height:14px;border-radius:6px;background:linear-gradient(100deg,var(--panel2) 40%,#1c4a32 50%,var(--panel2) 60%);background-size:200% 100%;animation:shimmer 1.1s infinite}
+@keyframes shimmer{to{background-position:-200% 0}}
+.pending-tag{font-size:11px;color:var(--amber);border:1px solid #5f4a1a;border-radius:12px;padding:1px 8px;margin-left:6px;white-space:nowrap}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--panel2);border:1px solid var(--green-dim);color:var(--text);padding:12px 20px;border-radius:10px;font-size:14px;opacity:0;transition:.25s;pointer-events:none;z-index:50;max-width:90vw;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(max-width:640px){body{padding:14px}h1{font-size:20px}}
 </style>
 </head>
 <body>
 <div class="wrap">
 <header>
-  <h1>🪠 Jobs Tracker</h1>
+  <h1>📋 Jobs Tracker</h1>
   <div class="actions">
-    <span id="syncStatus">connecting…</span>
-    <a class="btn" href="https://www.notion.so/3e3bc778e6858176a26fc36e57527f8d" target="_blank">Notion ↗</a>
+    <div class="syncbox"><span id="syncDot"></span><span id="syncText">connecting…</span><button id="retryBtn">Retry</button></div>
+    <a class="btn" href="https://www.notion.so/3e3bc778e6858176a26fc36e57527f8d" target="_blank" rel="noopener">Notion ↗</a>
     <a class="back" href="index.html">← Master App</a>
   </div>
 </header>
@@ -62,74 +80,151 @@ a.btn{background:#1d5b3c;border:1px solid #2f855a;color:#fff;padding:10px 16px;b
   <select id="status"><option value="new">New</option><option value="quoted">Quoted</option><option value="scheduled">Scheduled</option><option value="completed">Completed</option><option value="paid">Paid</option></select>
   <input id="quoteAmt" type="number" step="0.01" placeholder="Quote Amount ($)">
   <input id="notes" placeholder="Notes" style="grid-column:1/-1">
-  <button type="submit">Save Job</button>
+  <button type="submit" id="saveBtn">Save Job</button>
 </form>
 <div id="list"></div>
 </div>
+<div class="toast" id="toast"></div>
 <script>
 const SB_URL='https://fhbqxujlnqlmzvulrdxt.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoYnF4dWpsbnFsbXp2dWxyZHh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc2MTc0NDQsImV4cCI6MjEwMzE5MzQ0NH0.ThFmY_FXQlnaaI8GNLz9xSHATOacM9iOb8u0G0WFJ2w';
-// Public anon key (safe for browsers). May be null if the Supabase CDN failed to load.
 let sb=null;
 try{ sb=supabase.createClient(SB_URL,SB_KEY); }catch(e){ sb=null; }
-const LOCAL_KEY='gg_projects';
+
+/* ---- offline cache + pending-sync queue (localStorage) ---- */
+const LOCAL_KEY='gg_projects_v2';
 const readLocal=()=>{try{return JSON.parse(localStorage.getItem(LOCAL_KEY)||'[]');}catch(e){return[];}};
 const writeLocal=(rows)=>{try{localStorage.setItem(LOCAL_KEY,JSON.stringify(rows));}catch(e){}};
-let jobs=[];
-const syncEl=document.getElementById('syncStatus');
-function setSync(t,c){syncEl.textContent=t;syncEl.className=c||'';}
-async function load(){
-  if(!sb){ setSync('⚠ offline mode (cloud unreachable)','err'); jobs=readLocal(); render(); return; }
-  const {data,error}=await sb.from('gg_projects').select('*').order('updated_at',{ascending:false,nullsFirst:false});
-  if(error){setSync('⚠ offline mode','err');jobs=readLocal();}
-  else{jobs=data||[];setSync('✅ synced with cloud ('+jobs.length+' jobs)','ok');}
-  render();
+const isPending=(j)=>j.id&&String(j.id).indexOf('local-')===0;
+
+let jobs=[], lastSynced=null, loading=false;
+const syncText=document.getElementById('syncText'),syncDot=document.getElementById('syncDot'),retryBtn=document.getElementById('retryBtn');
+function setSync(mode,msg){
+  syncText.textContent=msg;
+  syncDot.className=mode==='ok'?'ok':mode==='err'?'err':'';
+  retryBtn.classList.toggle('show',mode==='err');
 }
 function timeAgo(d){if(!d)return'';const s=(Date.now()-new Date(d).getTime())/1e3;
  if(s<60)return'just now';if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';
  if(s<604800)return Math.floor(s/86400)+'d ago';return Math.floor(s/604800)+'w ago';}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2600);}
+function showSkeletons(){document.getElementById('list').innerHTML=
+  `<div class="table-scroll"><table><tbody>${'<tr class="skel-row"><td colspan="9"><span class="skel"></span></td></tr>'.repeat(5)}</tbody></table></div>`;}
+
+/* ---- load: cloud first, flush pending offline adds, cache locally ---- */
+async function load(){
+  if(loading)return;loading=true;
+  if(!jobs.length)showSkeletons();
+  setSync('','connecting…');
+  if(!sb||!navigator.onLine){
+    jobs=readLocal();
+    const n=jobs.filter(isPending).length;
+    setSync('err','⚠ offline — showing saved copy ('+jobs.length+' jobs'+(n?', '+n+' unsynced':'')+')');
+    render();loading=false;return;
+  }
+  try{
+    const pendingBefore=readLocal().filter(isPending); // offline adds made earlier — must not be wiped
+    const {data,error}=await sb.from('gg_projects').select('*').order('updated_at',{ascending:false,nullsFirst:false});
+    if(error)throw error;
+    const cloud=data||[];
+    // keep offline-added jobs alongside cloud rows (dedup by id in case one already synced)
+    const stillPending=pendingBefore.filter(p=>!cloud.some(d=>String(d.id)===String(p.id)));
+    jobs=cloud.concat(stillPending);
+    writeLocal(jobs); // keep the offline cache fresh on every successful load
+    lastSynced=Date.now();
+    setSync('ok','✅ synced · '+jobs.length+' jobs · '+new Date(lastSynced).toLocaleTimeString());
+    render();
+    await flushPending(); // push anything added while offline
+  }catch(e){
+    jobs=readLocal();
+    const n=jobs.filter(isPending).length;
+    setSync('err','⚠ cloud unreachable — showing saved copy ('+jobs.length+' jobs'+(n?', '+n+' unsynced':'')+')');
+    render();
+  }
+  loading=false;
+}
+async function flushPending(){
+  const pending=jobs.filter(isPending);
+  if(!pending.length||!sb||!navigator.onLine)return;
+  let synced=0;
+  for(const p of pending){
+    const clean={};for(const k of ['customer','address','zone','phone','status','quote','notes'])if(p[k]!==undefined)clean[k]=p[k];
+    try{
+      const {data,error}=await sb.from('gg_projects').insert(clean).select();
+      if(!error&&data&&data[0]){synced++;jobs=jobs.map(j=>j.id===p.id?data[0]:j);}
+    }catch(e){/* keep it queued */}
+  }
+  writeLocal(jobs);
+  if(synced){toast('✅ '+synced+' offline job'+(synced>1?'s':'')+' synced to cloud');lastSynced=Date.now();
+    setSync('ok','✅ synced · '+jobs.length+' jobs · '+new Date(lastSynced).toLocaleTimeString());}
+  render();
+}
+
 function badge(s){return 'b-'+(s||'new').toLowerCase();}
 function quoteTotal(j){return j.quote&&j.quote.total!=null?Number(j.quote.total):null;}
+function esc(s){return (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 function render(){
   const q=document.getElementById('search').value.toLowerCase(),fs=document.getElementById('fStatus').value;
   const rows=jobs.map((j,i)=>({...j,i})).filter(j=>{
     if(fs&&(j.status||'').toLowerCase()!==fs)return false;
     return !q||[j.customer,j.address,j.zone,j.phone,j.notes].join(' ').toLowerCase().includes(q);
   });
-  if(!rows.length){document.getElementById('list').innerHTML='<div class="empty">No jobs found. Add your first job above 👆</div>';return;}
-  document.getElementById('list').innerHTML=`<table><thead><tr>
+  const pend=jobs.filter(isPending).length;
+  if(!rows.length){
+    document.getElementById('list').innerHTML='<div class="empty">'+
+      (jobs.length?'No jobs match your search.':'No jobs yet.')+
+      '<br><button onclick="load()">↻ Reload</button></div>';return;}
+  document.getElementById('list').innerHTML=`<div class="table-scroll"><table><thead><tr>
     <th>Customer</th><th>Address</th><th>Zone</th><th>Phone</th><th>Status</th><th>Quote</th><th>Updated</th><th>Notes</th><th></th></tr></thead><tbody>
-    ${rows.map(j=>{const qa=quoteTotal(j);return `<tr><td><b>${esc(j.customer)}</b></td><td>${esc(j.address)}</td><td>${esc(j.zone)}</td>
-    <td>${j.phone?esc(j.phone):''}</td>
-    <td><span class="badge ${badge(j.status)}">${j.status||'new'}</span></td>
+    ${rows.map(j=>{const qa=quoteTotal(j);return `<tr><td><b>${esc(j.customer)}</b>${isPending(j)?'<span class="pending-tag">unsynced</span>':''}</td><td>${esc(j.address)}</td><td>${esc(j.zone)}</td>
+    <td>${j.phone?`<a style="color:var(--green);text-decoration:none" href="tel:${esc(j.phone.replace(/[^0-9+]/g,''))}">${esc(j.phone)}</a>`:''}</td>
+    <td><span class="badge ${badge(j.status)}">${esc(j.status||'new')}</span></td>
     <td>${qa!=null?'$'+qa.toLocaleString():''}</td>
     <td><span class="ago">${timeAgo(j.updated_at||j.created_at)}</span><br><span class="ago">${(j.updated_at||j.created_at)?new Date(j.updated_at||j.created_at).toLocaleDateString():''}</span></td>
     <td>${esc(j.notes)}</td>
     <td><button class="del" onclick="del(${j.i})" title="Delete">✕</button></td></tr>`;}).join('')}
-  </tbody></table>`;
+  </tbody></table></div>${pend?`<p style="margin-top:10px;font-size:12.5px;color:var(--amber)">⏳ ${pend} job${pend>1?'s':''} saved offline — will sync automatically when you're back online.</p>`:''}`;
 }
-function esc(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
-async function del(i){const j=jobs[i];if(!confirm('Delete '+(j.customer||'this job')+'?'))return;
-  if(j.id&&sb){const{error}=await sb.from('gg_projects').delete().eq('id',j.id);if(error)setSync('⚠ delete failed','err');}
-  jobs.splice(i,1);if(!sb)writeLocal(jobs);render();}
+async function del(i){
+  const j=jobs[i];if(!confirm('Delete '+(j.customer||'this job')+'?'))return;
+  if(isPending(j)){jobs.splice(i,1);writeLocal(jobs);setSync('err','⚠ offline — showing saved copy ('+jobs.length+' jobs)');render();return;}
+  if(j.id&&sb&&navigator.onLine){
+    const{error}=await sb.from('gg_projects').delete().eq('id',j.id);
+    if(error){toast('⚠ delete failed — check connection');return;}
+  }
+  jobs.splice(i,1);writeLocal(jobs);render();
+}
 function exportCSV(){
   const h=['Customer','Address','Zone','Phone','Status','Quote Total','Quote Text','Created','Updated','Notes'];
   const csv=[h].concat(jobs.map(j=>[j.customer,j.address,j.zone,j.phone,j.status,quoteTotal(j),j.quote_text,j.created_at,j.updated_at,j.notes])).map(r=>r.map(v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"').join(',')).join('\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='gutter-genie-jobs.csv';a.click();
 }
-document.getElementById('jobForm').addEventListener('submit',async e=>{e.preventDefault();
-  const row={customer:customer.value,address:address.value||null,zone:zone.value||null,phone:phone.value||null,status:status.value,
+document.getElementById('jobForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const saveBtn=document.getElementById('saveBtn');saveBtn.disabled=true;
+  const row={customer:customer.value.trim(),address:address.value||null,zone:zone.value||null,phone:phone.value||null,status:status.value,
     quote:quoteAmt.value?{total:Number(quoteAmt.value)}:null,notes:notes.value||null};
-  if(!sb){ // offline: keep a local copy so the job isn't lost
+  if(!sb||!navigator.onLine){
     row.id='local-'+Date.now();row.created_at=new Date().toISOString();row.updated_at=row.created_at;
-    jobs.unshift(row);writeLocal(jobs);setSync('⚠ saved locally (offline)','err');e.target.reset();render();return;
+    jobs.unshift(row);writeLocal(jobs);
+    setSync('err','⚠ offline — showing saved copy ('+jobs.length+' jobs, 1 unsynced)');
+    e.target.reset();render();toast('💾 saved on this device — will sync when online');saveBtn.disabled=false;return;
   }
-  const{data,error}=await sb.from('gg_projects').insert(row).select();
-  if(error){setSync('⚠ save failed — check connection','err');return;}
-  jobs.unshift(data[0]);setSync('✅ synced with cloud ('+jobs.length+' jobs)','ok');e.target.reset();render();});
+  try{
+    const{data,error}=await sb.from('gg_projects').insert(row).select();
+    if(error)throw error;
+    jobs.unshift(data[0]);writeLocal(jobs);
+    lastSynced=Date.now();
+    setSync('ok','✅ synced · '+jobs.length+' jobs · '+new Date(lastSynced).toLocaleTimeString());
+    e.target.reset();render();
+  }catch(err){toast('⚠ save failed — check connection');}
+  saveBtn.disabled=false;
+});
+document.getElementById('retryBtn').addEventListener('click',load);
+window.addEventListener('online',()=>{toast('🌐 back online — syncing…');load();});
+window.addEventListener('offline',()=>{setSync('err','⚠ offline — showing saved copy ('+jobs.length+' jobs)');});
 load();
-// Realtime: update live if jobs are added elsewhere
-if(sb) sb.channel('gg_projects_rt').on('postgres_changes',{event:'*',schema:'public',table:'gg_projects'},()=>load()).subscribe();
+if(sb)sb.channel('gg_projects_rt').on('postgres_changes',{event:'*',schema:'public',table:'gg_projects'},()=>load()).subscribe();
 </script>
 </body>
 </html>

@@ -1,7 +1,7 @@
 # gutter-genie-master
 
-Gutter Genie Master App — unified hub for the Gutter Genie gutter-cleaning
-business (Winnipeg / Steinbach / Grunthal).
+Gutter Genie Master App — business hub for the Gutter Genie gutter-cleaning
+business (Winnipeg / Steinbach / Grunthal). Jay's daily-driver dashboard.
 
 **Live site:** https://guttergenie.vercel.app
 
@@ -10,12 +10,20 @@ Pure static HTML — no build step, no dependencies to install. Vercel serves
 
 ## Pages
 
-- `index.html` — Master Dashboard. Sidebar nav with live app cards; loads each
-  app in a sandboxed iframe. Home view shows live job stats from Supabase.
+- `index.html` — Business Hub. Home view with live job stats (skeleton
+  loaders, last-synced timestamp, refresh, error state with retry), quick
+  actions (call, email, new quote, new job), and app cards with per-app
+  link-health status dots (reachable / unreachable / unknown). Sidebar nav
+  loads each app in a sandboxed iframe with a loading spinner and a
+  "taking too long" error bar (retry + open-in-new-tab). Online/offline
+  indicator in the topbar.
 - `jobs.html` — Jobs Tracker. Searchable job log (customer, address, zone,
   phone, status, quote, notes) reading the `gg_projects` Supabase table, with
-  realtime updates, CSV export, and a Notion link. Falls back to an offline
-  local-storage mode when the cloud is unreachable.
+  realtime updates, CSV export, tappable phone numbers, and a Notion link.
+  Offline mode: every successful cloud load refreshes a localStorage cache;
+  jobs added while offline are queued and auto-synced to the cloud on the
+  next successful load (marked "unsynced" until then). Table shows skeleton
+  rows while loading, a last-synced timestamp, and a retry button on errors.
 
 ## Data
 
@@ -25,14 +33,22 @@ to run the app.
 
 ## Local run
 
-Just open `index.html` in a browser, or serve the folder:
+Serve the folder (recommended — some features assume http):
 
 ```bash
 python3 -m http.server 8080
+# then open http://localhost:8080/
 ```
+
+## Tests
+
+`node --check` on both pages' inline scripts, plus a Node harness that stubs
+the DOM/Supabase/fetch and exercises the real page logic:
+stats rendering + error states, link-health checks, offline cache writes,
+offline job queueing, and pending-sync flush on reconnect. (Harness is
+throwaway — kept in /tmp during development, not committed.)
 
 ## Notes
 
 - Gallery before/after photo tagging is not implemented yet (follow-up — needs
   a `tag` column on the `gg_media_files` table in Supabase first).
-

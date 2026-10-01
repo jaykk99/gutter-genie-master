@@ -3,66 +3,140 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gutter Genie — Master App</title>
+<title>Gutter Genie — Business Hub</title>
+<meta name="description" content="Gutter Genie business hub — jobs, quotes, media, calls and more. Winnipeg · 204-972-0325">
+<meta name="theme-color" content="#0a1a12">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%AA%A0%3C/text%3E%3C/svg%3E">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',system-ui,sans-serif}
-body{background:#0b1f16;color:#e8f5ee;display:flex;height:100vh;overflow:hidden}
-.sidebar{width:280px;background:#0f2b1f;border-right:1px solid #1d4432;padding:20px;display:flex;flex-direction:column;gap:8px;overflow-y:auto;transition:transform .2s ease;z-index:20}
-.logo{font-size:22px;font-weight:800;color:#4ade80;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
-.logo span{color:#e8f5ee}
-.nav-btn{display:flex;align-items:center;gap:10px;width:100%;padding:12px 14px;background:transparent;border:1px solid transparent;border-radius:10px;color:#c9e8d6;font-size:14px;text-align:left;cursor:pointer;transition:.15s}
+:root{
+  --bg:#0a1a12; --panel:#0f2b1f; --panel2:#123626; --border:#1d4432;
+  --green:#4ade80; --green-dim:#2f855a; --text:#e8f5ee; --muted:#9dc7af;
+  --amber:#fbbf24; --red:#f87171; --blue:#60a5fa; --purple:#c084fc;
+  --radius:14px;
+}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',system-ui,-apple-system,sans-serif}
+body{background:var(--bg);color:var(--text);display:flex;height:100vh;overflow:hidden;-webkit-tap-highlight-color:transparent}
+
+/* ---------- sidebar ---------- */
+.sidebar{width:280px;background:var(--panel);border-right:1px solid var(--border);padding:20px;display:flex;flex-direction:column;gap:6px;overflow-y:auto;transition:transform .22s ease;z-index:20;flex-shrink:0}
+.logo{font-size:22px;font-weight:800;color:var(--green);margin-bottom:12px}
+.logo span{color:var(--text)}
+.nav-section{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:#6b9c80;margin:12px 4px 4px}
+.nav-btn{display:flex;align-items:center;gap:10px;width:100%;padding:11px 14px;background:transparent;border:1px solid transparent;border-radius:10px;color:#c9e8d6;font-size:14px;text-align:left;cursor:pointer;transition:.15s;font-family:inherit}
 .nav-btn:hover{background:#16402c}
-.nav-btn.active{background:#1d5b3c;border-color:#2f855a;color:#fff}
-.nav-btn .dot{width:8px;height:8px;border-radius:50%;background:#4ade80;flex-shrink:0}
-.nav-section{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:#6b9c80;margin:14px 4px 2px}
+.nav-btn.active{background:#1d5b3c;border-color:var(--green-dim);color:#fff}
+.nav-btn .dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0}
+.side-foot{margin-top:auto;padding-top:16px;font-size:12px;color:#6b9c80;line-height:1.7}
+.side-foot a{color:var(--green);text-decoration:none}
+
+/* ---------- main ---------- */
 .main{flex:1;display:flex;flex-direction:column;min-width:0}
-.topbar{padding:14px 22px;border-bottom:1px solid #1d4432;display:flex;justify-content:space-between;align-items:center;background:#0f2b1f;gap:10px}
+.topbar{padding:12px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:var(--panel);gap:10px;flex-shrink:0}
 .topbar-left{display:flex;align-items:center;gap:12px;min-width:0}
 .topbar h1{font-size:17px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.topbar a{color:#4ade80;font-size:13px;text-decoration:none;white-space:nowrap}
-.topbar a:hover{text-decoration:underline}
-#menuBtn{display:none;background:none;border:1px solid #1d4432;color:#e8f5ee;border-radius:8px;padding:8px 10px;cursor:pointer;font-size:16px}
-.frame-wrap{flex:1;position:relative;background:#fff;overflow-y:auto}
-iframe{width:100%;height:100%;border:0}
-.stats{padding:24px 40px 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;background:#0b1f16}
-.stat-card{background:#123626;border:1px solid #1d4432;border-radius:12px;padding:16px;text-align:center}
-.stat-card .n{font-size:24px;font-weight:800;color:#4ade80}
-.stat-card .l{font-size:11px;color:#9dc7af;text-transform:uppercase;letter-spacing:.5px;margin-top:4px}
-.stat-card.money .n{color:#fbbf24}
-.cards{padding:24px 40px 40px;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px;overflow-y:auto;background:#0b1f16}
-.card{background:#123626;border:1px solid #1d4432;border-radius:14px;padding:20px;cursor:pointer;transition:.15s}
-.card:hover{border-color:#4ade80;transform:translateY(-2px)}
+#menuBtn{display:none;background:none;border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 10px;cursor:pointer;font-size:16px}
+.net-pill{font-size:12px;padding:5px 12px;border-radius:20px;border:1px solid var(--border);color:var(--muted);white-space:nowrap}
+.net-pill.on{color:var(--green);border-color:var(--green-dim)}
+.net-pill.off{color:var(--red);border-color:#5f2a2a}
+#openExt{color:var(--green);font-size:13px;text-decoration:none;white-space:nowrap}
+#openExt:hover{text-decoration:underline}
+
+/* ---------- home ---------- */
+.home{flex:1;overflow-y:auto;padding:24px 32px 48px;background:
+  radial-gradient(900px 300px at 20% -60px, rgba(74,222,128,.07), transparent),
+  var(--bg)}
+.hero{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+.hero h2{font-size:24px;font-weight:700;letter-spacing:-.3px}
+.hero h2 .accent{color:var(--green)}
+.hero p{color:var(--muted);font-size:13.5px;margin-top:4px}
+.quick-actions{display:flex;gap:10px;flex-wrap:wrap}
+.qbtn{display:inline-flex;align-items:center;gap:7px;background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:10px 15px;border-radius:10px;font-size:13.5px;text-decoration:none;cursor:pointer;transition:.15s;font-family:inherit}
+.qbtn:hover{border-color:var(--green);transform:translateY(-1px)}
+.qbtn.primary{background:#1d5b3c;border-color:var(--green-dim)}
+
+.stats-head{display:flex;justify-content:space-between;align-items:center;margin:6px 2px 12px}
+.stats-head h3{font-size:14px;text-transform:uppercase;letter-spacing:.8px;color:#6b9c80;font-weight:600}
+.sync-line{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px}
+.refresh{background:var(--panel2);border:1px solid var(--border);color:var(--green);border-radius:8px;padding:6px 12px;font-size:12.5px;cursor:pointer;transition:.15s;font-family:inherit}
+.refresh:hover{border-color:var(--green)}
+.refresh:disabled{opacity:.5;cursor:default}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:28px}
+.stat-card{background:var(--panel2);border:1px solid var(--border);border-radius:var(--radius);padding:16px 14px;text-align:center;position:relative;overflow:hidden}
+.stat-card .n{font-size:26px;font-weight:800;color:var(--green);line-height:1.1}
+.stat-card .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-top:6px}
+.stat-card.money .n{color:var(--amber)}
+.stat-card.err{border-color:#5f2a2a}
+.stat-card.err .n{font-size:15px;color:var(--red)}
+.stat-card .retry{margin-top:8px;background:none;border:1px solid var(--border);color:var(--green);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer}
+.skel{border-radius:var(--radius);background:linear-gradient(100deg,var(--panel2) 40%,#17452f 50%,var(--panel2) 60%);background-size:200% 100%;animation:shimmer 1.2s infinite;min-height:92px}
+@keyframes shimmer{to{background-position:-200% 0}}
+
+.tools-head{font-size:14px;text-transform:uppercase;letter-spacing:.8px;color:#6b9c80;font-weight:600;margin:0 2px 12px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:16px}
+.card{background:var(--panel2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;cursor:pointer;transition:.16s;position:relative;display:flex;flex-direction:column}
+.card:hover{border-color:var(--green);transform:translateY(-3px);box-shadow:0 10px 28px rgba(0,0,0,.35)}
+.card .top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.card .icon{font-size:30px;line-height:1}
 .card h3{color:#fff;font-size:16px;margin-bottom:6px}
-.card p{color:#9dc7af;font-size:13px;line-height:1.5}
-.card .url{color:#4ade80;font-size:12px;margin-top:10px;word-break:break-all}
-.tag{display:inline-block;background:#1d5b3c;color:#a7f3c9;font-size:11px;padding:2px 8px;border-radius:20px;margin-bottom:8px}
+.card p{color:var(--muted);font-size:13px;line-height:1.55;flex:1}
+.card .foot{display:flex;justify-content:space-between;align-items:center;margin-top:14px;gap:8px}
+.card .url{color:var(--green);font-size:11.5px;word-break:break-all;opacity:.85;flex:1}
+.tag{display:inline-block;background:#1d5b3c;color:#a7f3c9;font-size:11px;padding:2px 10px;border-radius:20px;margin-bottom:10px;align-self:flex-start}
 .tag.soon{background:#3b3b1d;color:#fde047}
-.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:15}
+.tag.local{background:#1e3a5f;color:#93c5fd}
+.status{width:10px;height:10px;border-radius:50%;background:#555;flex-shrink:0}
+.status.ok{background:var(--green);box-shadow:0 0 8px rgba(74,222,128,.7)}
+.status.down{background:var(--red);box-shadow:0 0 8px rgba(248,113,113,.7)}
+.status.wait{background:var(--amber);animation:pulse 1.2s infinite}
+@keyframes pulse{50%{opacity:.4}}
+
+/* ---------- iframe view ---------- */
+.frame-wrap{flex:1;position:relative;background:#fff;overflow:hidden;display:flex;flex-direction:column}
+.frame-wrap iframe{width:100%;height:100%;border:0;flex:1}
+.frame-loader{position:absolute;inset:0;background:var(--bg);display:flex;flex-direction:column;gap:14px;align-items:center;justify-content:center;z-index:5}
+.frame-loader p{color:var(--muted);font-size:14px}
+.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.frame-error{position:absolute;top:0;left:0;right:0;background:#3b1d1d;border-bottom:1px solid #5f2a2a;color:#fecaca;padding:10px 16px;font-size:13.5px;display:flex;gap:12px;align-items:center;justify-content:center;z-index:6;flex-wrap:wrap}
+.frame-error button,.frame-error a{background:#5f2a2a;border:1px solid #7f3434;color:#fff;border-radius:8px;padding:6px 14px;font-size:13px;cursor:pointer;text-decoration:none}
+[hidden]{display:none!important}
+
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:15}
+.foot-note{text-align:center;color:#5b7d68;font-size:12px;padding:20px 0 4px}
+
 @media(max-width:900px){
-  .sidebar{position:fixed;top:0;left:0;height:100%;transform:translateX(-100%)}
+  .sidebar{position:fixed;top:0;left:0;height:100%;transform:translateX(-100%);box-shadow:8px 0 30px rgba(0,0,0,.4)}
   .sidebar.open{transform:translateX(0)}
-  .sidebar.open + .overlay,body.nav-open .overlay{display:block}
+  body.nav-open .overlay{display:block}
   #menuBtn{display:inline-block}
-  .stats,.cards{padding-left:18px;padding-right:18px}
+  .home{padding:18px 14px 40px}
+  .hero h2{font-size:20px}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .cards{grid-template-columns:1fr}
 }
 </style>
 </head>
 <body>
-<nav class="sidebar" id="sidebar">
+<nav class="sidebar" id="sidebar" aria-label="Main navigation">
   <div class="logo">🪠 Gutter <span>Genie</span></div>
   <div class="nav-section">Gutter Genie</div>
   <button class="nav-btn active" data-view="home"><span class="dot"></span>Home</button>
   <button class="nav-btn" data-view="jobs"><span class="dot"></span>📋 Jobs Tracker</button>
-  <button class="nav-btn" data-view="email"><span class="dot"></span>Email Notifications</button>
-  <button class="nav-btn" data-view="quote"><span class="dot"></span>ProQuote Estimator</button>
-  <button class="nav-btn" data-view="quotemcp"><span class="dot"></span>Quote Engine API</button>
-  <button class="nav-btn" data-view="media"><span class="dot"></span>Media Vault</button>
-  <button class="nav-btn" data-view="calls"><span class="dot"></span>Call Console</button>
-  <button class="nav-btn" data-view="site"><span class="dot"></span>Gutter Genie Site</button>
+  <button class="nav-btn" data-view="email"><span class="dot"></span>✉️ Email Notifications</button>
+  <button class="nav-btn" data-view="quote"><span class="dot"></span>💲 ProQuote Estimator</button>
+  <button class="nav-btn" data-view="quotemcp"><span class="dot"></span>🔌 Quote Engine API</button>
+  <button class="nav-btn" data-view="media"><span class="dot"></span>🖼️ Media Vault</button>
+  <button class="nav-btn" data-view="calls"><span class="dot"></span>📞 Call Console</button>
+  <button class="nav-btn" data-view="site"><span class="dot"></span>🌐 Gutter Genie Site</button>
   <div class="nav-section">Other businesses</div>
-  <button class="nav-btn" data-view="webworks"><span class="dot"></span>Winnipeg Web Works</button>
+  <button class="nav-btn" data-view="webworks"><span class="dot"></span>💻 Winnipeg Web Works</button>
   <button class="nav-btn" data-view="moveandmetal"><span class="dot"></span>♻️ Move &amp; Metal</button>
+  <div class="side-foot">
+    📞 <a href="tel:204-972-0325">204-972-0325</a><br>
+    ✉️ <a href="mailto:guttergeinie@gmail.com">guttergeinie@gmail.com</a>
+  </div>
 </nav>
 <div class="overlay" id="overlay"></div>
 <div class="main">
@@ -71,85 +145,161 @@ iframe{width:100%;height:100%;border:0}
       <button id="menuBtn" aria-label="Menu">☰</button>
       <h1 id="title">Master Dashboard</h1>
     </div>
-    <a id="openExt" href="#" target="_blank">Open in new tab ↗</a>
+    <span class="net-pill on" id="netPill">● online</span>
+    <a id="openExt" href="#" target="_blank" rel="noopener">Open in new tab ↗</a>
   </div>
-  <div class="frame-wrap" id="frameWrap">
-    <div id="stats" class="stats"></div>
-    <div class="cards" id="cards"></div>
-  </div>
+  <div class="frame-wrap" id="frameWrap"></div>
 </div>
 <script>
+const PHONE='204-972-0325', EMAIL='guttergeinie@gmail.com';
 const APPS={
-  jobs:{name:'Jobs Tracker',desc:'Searchable job log — customer names, addresses, zones, quotes, and statuses, live from Supabase. Syncs with Notion.',url:'jobs.html'},
-  email:{name:'Email Notifications Dashboard',desc:'Unified inbox for Gutter Genie & Webworks emails — searchable, shows how long ago each email arrived.',url:'https://jaykk99.github.io/email-notifications-dashboard/'},
-  quote:{name:'ProQuote Estimator',desc:'Eavestrough quote generator — build and send customer quotes.',url:'https://proquote-estimator.vercel.app'},
-  quotemcp:{name:'Quote Engine API (MCP)',desc:'Connects job photos to notes, pricing and ready-to-send quotes.',url:'https://gutter-genie-quote-mcp.vercel.app'},
-  media:{name:'Media Vault',desc:'PIN-gated photo/video/file uploader organized by project.',url:'https://gutter-genie-media.vercel.app'},
-  calls:{name:'Call Console',desc:'Gutter Genie call handling console.',url:'https://guttergenie-call-console.vercel.app'},
-  site:{name:'Gutter Genie Site',desc:'Customer-facing Gutter Genie website.',url:'https://guttergenie.vercel.app'},
-  webworks:{name:'Winnipeg Web Works',desc:'Digital audit service landing page — now with a live AI audit chat widget.',url:'https://winnipeg-web-works.vercel.app'},
-  moveandmetal:{name:'Move & Metal',desc:'Junk & scrap metal removal — Facebook page for now, no landing page built yet.',url:'https://www.facebook.com/profile.php?id=1379262015269430',soon:true}
+  jobs:{name:'Jobs Tracker',icon:'📋',desc:'Searchable job log — customer names, addresses, zones, quotes, and statuses. Live from the cloud with an offline fallback.',url:'jobs.html',local:true},
+  email:{name:'Email Notifications Dashboard',icon:'✉️',desc:'Unified inbox for Gutter Genie & Webworks emails — searchable, shows how long ago each email arrived.',url:'https://jaykk99.github.io/email-notifications-dashboard/'},
+  quote:{name:'ProQuote Estimator',icon:'💲',desc:'Eavestrough quote generator — build and send customer quotes from the phone.',url:'https://proquote-estimator.vercel.app'},
+  quotemcp:{name:'Quote Engine API (MCP)',icon:'🔌',desc:'Connects job photos to notes, pricing and ready-to-send quotes.',url:'https://gutter-genie-quote-mcp.vercel.app'},
+  media:{name:'Media Vault',icon:'🖼️',desc:'PIN-gated photo/video/file uploader organized by project.',url:'https://gutter-genie-media.vercel.app'},
+  calls:{name:'Call Console',icon:'📞',desc:'Gutter Genie call handling console.',url:'https://guttergenie-call-console.vercel.app'},
+  site:{name:'Gutter Genie Site',icon:'🌐',desc:'Customer-facing Gutter Genie website.',url:'https://guttergenie.vercel.app'},
+  webworks:{name:'Winnipeg Web Works',icon:'💻',desc:'Digital audit service landing page — live AI audit chat widget.',url:'https://winnipeg-web-works.vercel.app'},
+  moveandmetal:{name:'Move & Metal',icon:'♻️',desc:'Junk & scrap metal removal — Facebook page for now, no landing page built yet.',url:'https://www.facebook.com/profile.php?id=1379262015269430',soon:true}
 };
-const frameWrap=document.getElementById('frameWrap'),title=document.getElementById('title'),openExt=document.getElementById('openExt'),cards=document.getElementById('cards'),statsEl=document.getElementById('stats');
-const sidebar=document.getElementById('sidebar'),menuBtn=document.getElementById('menuBtn'),overlay=document.getElementById('overlay');
+const frameWrap=document.getElementById('frameWrap'),title=document.getElementById('title'),
+      openExt=document.getElementById('openExt'),netPill=document.getElementById('netPill'),
+      sidebar=document.getElementById('sidebar'),menuBtn=document.getElementById('menuBtn'),overlay=document.getElementById('overlay');
 function closeNav(){sidebar.classList.remove('open');document.body.classList.remove('nav-open');}
 menuBtn.addEventListener('click',()=>{sidebar.classList.toggle('open');document.body.classList.toggle('nav-open');});
 overlay.addEventListener('click',closeNav);
 
-function renderCards(){
-  cards.innerHTML=Object.entries(APPS).map(([k,a])=>`<div class="card" onclick="selectApp('${k}')"><span class="tag ${a.soon?'soon':''}">${a.soon?'Facebook only':'App'}</span><h3>${a.name}</h3><p>${a.desc}</p><div class="url">${a.url}</div></div>`).join('');
+function updateNet(){const on=navigator.onLine;netPill.textContent=on?'● online':'● offline';netPill.className='net-pill '+(on?'on':'off');}
+window.addEventListener('online',()=>{updateNet();if(current==='home')loadStats();});
+window.addEventListener('offline',updateNet);
+updateNet();
+
+let current='home';
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+function showHome(){
+  title.textContent='Master Dashboard';openExt.href='#';
+  frameWrap.innerHTML=`
+  <div class="home">
+    <div class="hero">
+      <div><h2>Business <span class="accent">Hub</span></h2><p>Winnipeg · Steinbach · Grunthal — everything for the day, in one place.</p></div>
+      <div class="quick-actions">
+        <a class="qbtn primary" href="tel:${PHONE}">📞 ${PHONE}</a>
+        <a class="qbtn" href="mailto:${EMAIL}">✉️ Email</a>
+        <button class="qbtn" id="qaQuote">💲 New Quote</button>
+        <button class="qbtn" id="qaJob">➕ New Job</button>
+      </div>
+    </div>
+    <div class="stats-head"><h3>At a glance</h3>
+      <span class="sync-line"><span id="syncText">—</span><button class="refresh" id="refreshStats">↻ Refresh</button></span>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div class="tools-head">Tools</div>
+    <div class="cards" id="cards"></div>
+    <div class="foot-note">Gutter Genie · ${PHONE} · ${EMAIL}</div>
+  </div>`;
+  document.getElementById('qaQuote').addEventListener('click',()=>selectApp('quote'));
+  document.getElementById('qaJob').addEventListener('click',()=>selectApp('jobs'));
+  document.getElementById('refreshStats').addEventListener('click',loadStats);
+  renderCards();loadStats();checkHealth();
 }
+
+/* ---------- cards + link health ---------- */
+function renderCards(){
+  const wrap=document.getElementById('cards');if(!wrap)return;
+  wrap.innerHTML=Object.entries(APPS).map(([k,a])=>`
+    <div class="card" data-app="${k}" role="button" tabindex="0" aria-label="Open ${esc(a.name)}">
+      <div class="top"><span class="icon">${a.icon}</span><span class="status wait" data-status="${k}" title="Checking…"></span></div>
+      ${a.soon?'<span class="tag soon">Facebook only</span>':a.local?'<span class="tag local">Local · offline-ready</span>':'<span class="tag">App</span>'}
+      <h3>${esc(a.name)}</h3><p>${esc(a.desc)}</p>
+      <div class="foot"><span class="url">${esc(a.url)}</span></div>
+    </div>`).join('');
+  wrap.querySelectorAll('.card').forEach(c=>{
+    const open=()=>selectApp(c.dataset.app);
+    c.addEventListener('click',open);
+    c.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open();}});
+  });
+}
+async function checkHealth(){
+  for(const [k,a] of Object.entries(APPS)){
+    const el=document.querySelector(`[data-status="${k}"]`);if(!el)break;
+    const set=(cls,t)=>{el.className='status '+cls;el.title=t;};
+    if(a.local){set('ok','Local page — works offline');continue;}
+    if(!navigator.onLine){set('wait','Offline — status unknown');continue;}
+    const ctrl=new AbortController();const to=setTimeout(()=>ctrl.abort(),10000);
+    try{await fetch(a.url,{mode:'no-cors',signal:ctrl.signal,cache:'no-store'});clearTimeout(to);set('ok','Reachable');}
+    catch(e){clearTimeout(to);set('down','Unreachable right now — try “Open in new tab”');}
+  }
+}
+
+/* ---------- iframe app view ---------- */
 function selectApp(k){
+  const a=APPS[k];if(!a)return;
+  current=k;
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.view===k));
-  const a=APPS[k];
-  title.textContent=a.name; openExt.href=a.url;
-  statsEl.style.display='none';
-  frameWrap.innerHTML=`<iframe src="${a.url}" title="${a.name}" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>`;
+  title.textContent=a.name;openExt.href=a.url;
+  frameWrap.innerHTML=`
+    <div class="frame-loader" id="floader"><div class="spinner"></div><p>Loading ${esc(a.name)}…</p></div>
+    <div class="frame-error" id="ferr" hidden><span>⚠ Taking longer than usual.</span>
+      <button id="fretry">Retry</button><a href="${esc(a.url)}" target="_blank" rel="noopener">Open in new tab ↗</a></div>
+    <iframe src="${esc(a.url)}" title="${esc(a.name)}" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>`;
+  const fr=frameWrap.querySelector('iframe'),loader=document.getElementById('floader'),err=document.getElementById('ferr');
+  let done=false;
+  const to=setTimeout(()=>{if(!done){done=true;loader.style.display='none';err.hidden=false;}},20000);
+  fr.addEventListener('load',()=>{if(done)return;done=true;clearTimeout(to);loader.style.display='none';});
+  document.getElementById('fretry').addEventListener('click',()=>{done=false;loader.style.display='flex';err.hidden=true;fr.src=fr.src;});
   closeNav();
 }
-document.querySelectorAll('.nav-btn').forEach(b=>b.addEventListener('click',()=>{
-  const v=b.dataset.view;
-  document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');
-  if(v==='home'){
-    title.textContent='Master Dashboard';openExt.href='#';
-    frameWrap.innerHTML='';
-    frameWrap.appendChild(statsEl);frameWrap.appendChild(cards);
-    statsEl.style.display='grid';
-    renderCards();loadStats();
-    closeNav();
-  }
-  else selectApp(v);
-}));
 
-// Live at-a-glance stats pulled from the same Supabase jobs table as the Jobs Tracker.
+/* ---------- stats ---------- */
 const SB_URL='https://fhbqxujlnqlmzvulrdxt.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoYnF4dWpsbnFsbXp2dWxyZHh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc2MTc0NDQsImV4cCI6MjEwMzE5MzQ0NH0.ThFmY_FXQlnaaI8GNLz9xSHATOacM9iOb8u0G0WFJ2w';
-let sb;
-try{ sb=supabase.createClient(SB_URL,SB_KEY); }catch(e){}
+let sb=null;
+try{ sb=supabase.createClient(SB_URL,SB_KEY); }catch(e){ sb=null; }
+let lastSynced=null;
+function timeAgo(ts){const s=(Date.now()-ts)/1e3;if(s<60)return'just now';if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago';}
 async function loadStats(){
-  if(!sb){statsEl.innerHTML='';return;}
+  const statsEl=document.getElementById('stats'),syncText=document.getElementById('syncText'),btn=document.getElementById('refreshStats');
+  if(!statsEl)return;
+  btn.disabled=true;
+  statsEl.innerHTML='<div class="skel"></div>'.repeat(6);
+  syncText.textContent='syncing…';
+  const fail=(msg)=>{
+    statsEl.innerHTML=`<div class="stat-card err"><div class="n">⚠ ${esc(msg)}</div><div class="l">Job stats unavailable</div><button class="retry" onclick="loadStats()">Retry</button></div>`;
+    syncText.textContent=lastSynced?('last synced '+timeAgo(lastSynced)):'never synced';
+    btn.disabled=false;
+  };
+  if(!sb)return fail('cloud library failed to load');
+  if(!navigator.onLine)return fail('you are offline');
   try{
     const {data,error}=await sb.from('gg_projects').select('status,quote');
-    if(error||!data){statsEl.innerHTML='';return;}
-    const counts={};
-    let totalValue=0;
+    if(error||!data)throw new Error('query failed');
+    const counts={};let totalValue=0;
     data.forEach(p=>{
-      const s=(p.status||'new').toLowerCase();
-      counts[s]=(counts[s]||0)+1;
-      const amt=p.quote&&p.quote.total!=null?Number(p.quote.total):0;
-      totalValue+=amt;
+      const s=(p.status||'new').toLowerCase();counts[s]=(counts[s]||0)+1;
+      const amt=p.quote&&p.quote.total!=null?Number(p.quote.total):0;totalValue+=amt;
     });
     const money=n=>'$'+Math.round(n).toLocaleString();
     const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
-    let cards=Object.keys(counts).sort().map(s=>
-      `<div class="stat-card"><div class="n">${counts[s]}</div><div class="l">${cap(s)}</div></div>`).join('');
-    cards+=`<div class="stat-card"><div class="n">${data.length}</div><div class="l">Total Jobs</div></div>`;
-    cards+=`<div class="stat-card money"><div class="n">${money(totalValue)}</div><div class="l">Total quoted</div></div>`;
-    statsEl.innerHTML=cards;
-  }catch(e){statsEl.innerHTML='';}
+    let html=Object.keys(counts).sort().map(s=>`<div class="stat-card"><div class="n">${counts[s]}</div><div class="l">${esc(cap(s))}</div></div>`).join('');
+    html+=`<div class="stat-card"><div class="n">${data.length}</div><div class="l">Total Jobs</div></div>`;
+    html+=`<div class="stat-card money"><div class="n">${money(totalValue)}</div><div class="l">Total quoted</div></div>`;
+    statsEl.innerHTML=html;
+    lastSynced=Date.now();syncText.textContent='synced '+timeAgo(lastSynced);
+  }catch(e){fail('cloud unreachable');}
+  btn.disabled=false;
 }
-renderCards();
-loadStats();
+
+/* ---------- nav ---------- */
+document.querySelectorAll('.nav-btn').forEach(b=>b.addEventListener('click',()=>{
+  const v=b.dataset.view;
+  document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');
+  if(v==='home'){current='home';showHome();}
+  else selectApp(v);
+  closeNav();
+}));
+showHome();
 </script>
 </body>
 </html>
