@@ -83,6 +83,7 @@ body{background:var(--bg);color:var(--text);display:flex;height:100vh;overflow:h
 .card p{color:var(--muted);font-size:13px;line-height:1.55;flex:1}
 .card .foot{display:flex;justify-content:space-between;align-items:center;margin-top:14px;gap:8px}
 .card .url{color:var(--green);font-size:11.5px;word-break:break-all;opacity:.85;flex:1}
+.card .url.backup{color:var(--yellow,#eab308);font-size:10.5px;opacity:.7;display:block;margin-top:2px}
 .tag{display:inline-block;background:#1d5b3c;color:#a7f3c9;font-size:11px;padding:2px 10px;border-radius:20px;margin-bottom:10px;align-self:flex-start}
 .tag.soon{background:#3b3b1d;color:#fde047}
 .tag.local{background:#1e3a5f;color:#93c5fd}
@@ -155,12 +156,12 @@ const PHONE='204-972-0325', EMAIL='guttergeniewpg@gmail.com';
 const APPS={
   jobs:{name:'Jobs Tracker',icon:'📋',desc:'Searchable job log — customer names, addresses, zones, quotes, and statuses. Live from the cloud with an offline fallback.',url:'jobs.html',local:true},
   email:{name:'Email Notifications Dashboard',icon:'✉️',desc:'Unified inbox for Gutter Genie & Webworks emails — searchable, shows how long ago each email arrived.',url:'https://jaykk99.github.io/email-notifications-dashboard/'},
-  quote:{name:'ProQuote Estimator',icon:'💲',desc:'Eavestrough quote generator — build and send customer quotes from the phone.',url:'https://proquote-estimator.vercel.app'},
-  quotemcp:{name:'Quote Engine API (MCP)',icon:'🔌',desc:'Connects job photos to notes, pricing and ready-to-send quotes.',url:'https://gutter-genie-quote-mcp.vercel.app'},
-  media:{name:'Media Vault',icon:'🖼️',desc:'PIN-gated photo/video/file uploader organized by project.',url:'https://gutter-genie-media.vercel.app'},
-  calls:{name:'Call Console',icon:'📞',desc:'Gutter Genie call handling console.',url:'https://guttergenie-call-console.vercel.app'},
-  site:{name:'Gutter Genie Site',icon:'🌐',desc:'Customer-facing Gutter Genie website.',url:'https://guttergenie.vercel.app'},
-  webworks:{name:'Winnipeg Web Works',icon:'💻',desc:'Digital audit service landing page — live AI audit chat widget.',url:'https://winnipeg-web-works.vercel.app'},
+  quote:{name:'ProQuote Estimator',icon:'💲',desc:'Eavestrough quote generator — build and send customer quotes from the phone.',url:'https://proquote-estimator.vercel.app',backup:'https://proquote-estimator.vercel.app'},
+  quotemcp:{name:'Quote Engine API (MCP)',icon:'🔌',desc:'Connects job photos to notes, pricing and ready-to-send quotes.',url:'https://gutter-genie-quote-mcp.vercel.app',backup:'https://gutter-genie-quote-mcp.vercel.app'},
+  media:{name:'Media Vault',icon:'🖼️',desc:'PIN-gated photo/video/file uploader organized by project.',url:'https://gutter-genie-media.vercel.app',backup:'https://gutter-genie-media.vercel.app'},
+  calls:{name:'Call Console',icon:'📞',desc:'Gutter Genie call handling console.',url:'https://guttergenie-call-console.vercel.app',backup:'https://guttergenie-call-console.vercel.app'},
+  site:{name:'Gutter Genie Site',icon:'🌐',desc:'Customer-facing Gutter Genie website.',url:'https://guttergenie.pages.dev',backup:'https://guttergenie.vercel.app'},
+  webworks:{name:'Winnipeg Web Works',icon:'💻',desc:'Digital audit service landing page — live AI audit chat widget.',url:'https://winnipeg-web-works.vercel.app',backup:'https://winnipeg-web-works.vercel.app'},
   moveandmetal:{name:'Move & Metal',icon:'♻️',desc:'Junk & scrap metal removal — Facebook page for now, no landing page built yet.',url:'https://www.facebook.com/profile.php?id=1379262015269430',soon:true}
 };
 const frameWrap=document.getElementById('frameWrap'),title=document.getElementById('title'),
@@ -213,7 +214,7 @@ function renderCards(){
       <div class="top"><span class="icon">${a.icon}</span><span class="status wait" data-status="${k}" title="Checking…"></span></div>
       ${a.soon?'<span class="tag soon">Facebook only</span>':a.local?'<span class="tag local">Local · offline-ready</span>':'<span class="tag">App</span>'}
       <h3>${esc(a.name)}</h3><p>${esc(a.desc)}</p>
-      <div class="foot"><span class="url">${esc(a.url)}</span></div>
+      <div class="foot"><span class="url">${esc(a.url)}</span>${a.backup&&a.backup!==a.url?`<span class="url backup" title="Backup URL">backup: ${esc(a.backup)}</span>`:''}</div>
     </div>`).join('');
   wrap.querySelectorAll('.card').forEach(c=>{
     const open=()=>selectApp(c.dataset.app);
