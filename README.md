@@ -3,7 +3,7 @@
 Gutter Genie Master App — business hub for the Gutter Genie gutter-cleaning
 business (Winnipeg / Steinbach / Grunthal). Jay's daily-driver dashboard.
 
-**Live site:** https://guttergenie.vercel.app
+**Live site:** https://guttergenie.pages.dev
 
 Pure static HTML — no build step, no dependencies to install. Vercel serves
 `index.html` directly.
