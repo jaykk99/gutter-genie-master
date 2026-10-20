@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Jobs Tracker — Gutter Genie</title>
+<title>Jobs Tracker: Gutter Genie</title>
 <meta name="theme-color" content="#0a1a12">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%8B%3C/text%3E%3C/svg%3E">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -119,11 +119,11 @@ async function load(){
   if(!sb||!navigator.onLine){
     jobs=readLocal();
     const n=jobs.filter(isPending).length;
-    setSync('err','⚠ offline — showing saved copy ('+jobs.length+' jobs'+(n?', '+n+' unsynced':'')+')');
+    setSync('err','⚠ offline: showing saved copy ('+jobs.length+' jobs'+(n?', '+n+' unsynced':'')+')');
     render();loading=false;return;
   }
   try{
-    const pendingBefore=readLocal().filter(isPending); // offline adds made earlier — must not be wiped
+    const pendingBefore=readLocal().filter(isPending); // offline adds made earlier: must not be wiped
     const {data,error}=await sb.from('gg_projects').select('*').order('updated_at',{ascending:false,nullsFirst:false});
     if(error)throw error;
     const cloud=data||[];
@@ -138,7 +138,7 @@ async function load(){
   }catch(e){
     jobs=readLocal();
     const n=jobs.filter(isPending).length;
-    setSync('err','⚠ cloud unreachable — showing saved copy ('+jobs.length+' jobs'+(n?', '+n+' unsynced':'')+')');
+    setSync('err','⚠ cloud unreachable: showing saved copy ('+jobs.length+' jobs'+(n?', '+n+' unsynced':'')+')');
     render();
   }
   loading=false;
@@ -183,14 +183,14 @@ function render(){
     <td><span class="ago">${timeAgo(j.updated_at||j.created_at)}</span><br><span class="ago">${(j.updated_at||j.created_at)?new Date(j.updated_at||j.created_at).toLocaleDateString():''}</span></td>
     <td>${esc(j.notes)}</td>
     <td><button class="del" onclick="del(${j.i})" title="Delete">✕</button></td></tr>`;}).join('')}
-  </tbody></table></div>${pend?`<p style="margin-top:10px;font-size:12.5px;color:var(--amber)">⏳ ${pend} job${pend>1?'s':''} saved offline — will sync automatically when you're back online.</p>`:''}`;
+  </tbody></table></div>${pend?`<p style="margin-top:10px;font-size:12.5px;color:var(--amber)">⏳ ${pend} job${pend>1?'s':''} saved offline: will sync automatically when you're back online.</p>`:''}`;
 }
 async function del(i){
   const j=jobs[i];if(!confirm('Delete '+(j.customer||'this job')+'?'))return;
-  if(isPending(j)){jobs.splice(i,1);writeLocal(jobs);setSync('err','⚠ offline — showing saved copy ('+jobs.length+' jobs)');render();return;}
+  if(isPending(j)){jobs.splice(i,1);writeLocal(jobs);setSync('err','⚠ offline: showing saved copy ('+jobs.length+' jobs)');render();return;}
   if(j.id&&sb&&navigator.onLine){
     const{error}=await sb.from('gg_projects').delete().eq('id',j.id);
-    if(error){toast('⚠ delete failed — check connection');return;}
+    if(error){toast('⚠ delete failed: check connection');return;}
   }
   jobs.splice(i,1);writeLocal(jobs);render();
 }
@@ -207,8 +207,8 @@ document.getElementById('jobForm').addEventListener('submit',async e=>{
   if(!sb||!navigator.onLine){
     row.id='local-'+Date.now();row.created_at=new Date().toISOString();row.updated_at=row.created_at;
     jobs.unshift(row);writeLocal(jobs);
-    setSync('err','⚠ offline — showing saved copy ('+jobs.length+' jobs, 1 unsynced)');
-    e.target.reset();render();toast('💾 saved on this device — will sync when online');saveBtn.disabled=false;return;
+    setSync('err','⚠ offline: showing saved copy ('+jobs.length+' jobs, 1 unsynced)');
+    e.target.reset();render();toast('💾 saved on this device: will sync when online');saveBtn.disabled=false;return;
   }
   try{
     const{data,error}=await sb.from('gg_projects').insert(row).select();
@@ -217,12 +217,12 @@ document.getElementById('jobForm').addEventListener('submit',async e=>{
     lastSynced=Date.now();
     setSync('ok','✅ synced · '+jobs.length+' jobs · '+new Date(lastSynced).toLocaleTimeString());
     e.target.reset();render();
-  }catch(err){toast('⚠ save failed — check connection');}
+  }catch(err){toast('⚠ save failed: check connection');}
   saveBtn.disabled=false;
 });
 document.getElementById('retryBtn').addEventListener('click',load);
-window.addEventListener('online',()=>{toast('🌐 back online — syncing…');load();});
-window.addEventListener('offline',()=>{setSync('err','⚠ offline — showing saved copy ('+jobs.length+' jobs)');});
+window.addEventListener('online',()=>{toast('🌐 back online: syncing…');load();});
+window.addEventListener('offline',()=>{setSync('err','⚠ offline: showing saved copy ('+jobs.length+' jobs)');});
 load();
 if(sb)sb.channel('gg_projects_rt').on('postgres_changes',{event:'*',schema:'public',table:'gg_projects'},()=>load()).subscribe();
 </script>

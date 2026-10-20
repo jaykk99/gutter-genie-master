@@ -1,23 +1,25 @@
 # gutter-genie-master
 
-Gutter Genie Master App — business hub for the Gutter Genie gutter-cleaning
+Gutter Genie Master App: business hub for the Gutter Genie gutter-cleaning
 business (Winnipeg / Steinbach / Grunthal). Jay's daily-driver dashboard.
 
-**Live site:** https://guttergenie.pages.dev
+**Live site:** https://gutter-genie-master.pages.dev
 
-Pure static HTML — no build step, no dependencies to install. Vercel serves
-`index.html` directly.
+Pure static HTML: no build step, no dependencies to install. Cloudflare Pages
+serves `index.html` directly. The old Vercel deployment is disabled (the team
+was paused in Oct 2026); the linked satellite apps that still point at
+`*.vercel.app` come back when hosting is re-pointed.
 
 ## Pages
 
-- `index.html` — Business Hub. Home view with live job stats (skeleton
+- `index.html`: Business Hub. Home view with live job stats (skeleton
   loaders, last-synced timestamp, refresh, error state with retry), quick
   actions (call, email, new quote, new job), and app cards with per-app
   link-health status dots (reachable / unreachable / unknown). Sidebar nav
   loads each app in a sandboxed iframe with a loading spinner and a
   "taking too long" error bar (retry + open-in-new-tab). Online/offline
   indicator in the topbar.
-- `jobs.html` — Jobs Tracker. Searchable job log (customer, address, zone,
+- `jobs.html`: Jobs Tracker. Searchable job log (customer, address, zone,
   phone, status, quote, notes) reading the `gg_projects` Supabase table, with
   realtime updates, CSV export, tappable phone numbers, and a Notion link.
   Offline mode: every successful cloud load refreshes a localStorage cache;
@@ -27,13 +29,13 @@ Pure static HTML — no build step, no dependencies to install. Vercel serves
 
 ## Data
 
-Both pages use a public Supabase **anon key** (embedded, safe for browsers —
+Both pages use a public Supabase **anon key** (embedded, safe for browsers,
 it is rate-limited by Row Level Security). No API keys or secrets are required
 to run the app.
 
 ## Local run
 
-Serve the folder (recommended — some features assume http):
+Serve the folder (recommended: some features assume http):
 
 ```bash
 python3 -m http.server 8080
@@ -46,9 +48,9 @@ python3 -m http.server 8080
 the DOM/Supabase/fetch and exercises the real page logic:
 stats rendering + error states, link-health checks, offline cache writes,
 offline job queueing, and pending-sync flush on reconnect. (Harness is
-throwaway — kept in /tmp during development, not committed.)
+throwaway: kept in /tmp during development, not committed.)
 
 ## Notes
 
-- Gallery before/after photo tagging is not implemented yet (follow-up — needs
+- Gallery before/after photo tagging is not implemented yet (follow-up: needs
   a `tag` column on the `gg_media_files` table in Supabase first).
