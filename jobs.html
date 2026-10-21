@@ -65,6 +65,8 @@ button.danger{background:#5f1e1e;border-color:#7f2a2a}
 button.ghostbtn{background:none;border:1px solid var(--border)}
 .rowsel{width:17px;height:17px;accent-color:var(--green);cursor:pointer}
 #selAll{width:17px;height:17px;accent-color:var(--green);cursor:pointer}
+.rowstatus{background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:5px 8px;font-size:12.5px;font-family:inherit;cursor:pointer}
+.rowstatus:focus{border-color:var(--green)}
 .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--panel2);border:1px solid var(--green-dim);color:var(--text);padding:12px 20px;border-radius:10px;font-size:14px;opacity:0;transition:.25s;pointer-events:none;z-index:50;max-width:90vw;text-align:center}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 @media(max-width:640px){body{padding:14px}h1{font-size:20px}}
@@ -84,6 +86,9 @@ button.ghostbtn{background:none;border:1px solid var(--border)}
   <input id="search" placeholder="🔍 Search name, address, zone, phone, notes…" oninput="render()">
   <select id="fStatus" onchange="render()">
     <option value="">All statuses</option><option value="new">New</option><option value="quoted">Quoted</option><option value="scheduled">Scheduled</option><option value="completed">Completed</option><option value="paid">Paid</option>
+  </select>
+  <select id="fZone" onchange="render()" title="Filter by zone">
+    <option value="">All zones</option>
   </select>
   <button onclick="exportCSV()">Export CSV</button>
 </div>
@@ -252,6 +257,22 @@ async function batchDelete(){
   toast('Deleted '+n+' job'+(n>1?'s':''));
   load();
 }
+/* ---- per-row status editor: change status without leaving the table ---- */
+async function rowSetStatus(id,s){
+  const j=jobs.find(x=>String(x.id)===String(id));
+  if(!j||(j.status||'new')===s)return;
+  const prev=j.status;
+  j.status=s;writeLocal(jobs);render();
+  if(!sb||!navigator.onLine){toast('Status saved on this device; will sync when online');return;}
+  if(String(id).indexOf('local-')===0)return; // queued rows sync via flushPending
+  try{
+    const{error}=await sb.from('gg_projects').update({status:s}).eq('id',id);
+    if(error)throw error;
+  }catch(e){
+    j.status=prev;writeLocal(jobs);render();
+    toast('⚠ status update failed: check connection');
+  }
+}
 
 /* ---- sortable columns: click a header to sort, click again to flip ---- */
 let sortCol='updated',sortDir=-1; // default: most recently updated first
@@ -272,15 +293,25 @@ function paintSortHeaders(){
   });
 }
 function esc(s){return (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+/* ---- zone filter: options built from the loaded jobs ---- */
+function refreshZoneOptions(){
+  const sel=document.getElementById('fZone');if(!sel)return;
+  const cur=sel.value;
+  const zones=[...new Set(jobs.map(j=>(j.zone||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  sel.innerHTML='<option value="">All zones</option>'+zones.map(z=>`<option value="${esc(z)}">${esc(z)}</option>`).join('');
+  if(zones.includes(cur))sel.value=cur;
+}
 function render(){
+  refreshZoneOptions();
   // drop selections for rows that no longer exist
   if(selected.size){
     const alive=new Set(jobs.map(j=>String(j.id)));
     selected=new Set([...selected].filter(id=>alive.has(id)));
   }
-  const q=document.getElementById('search').value.toLowerCase(),fs=document.getElementById('fStatus').value;
+  const q=document.getElementById('search').value.toLowerCase(),fs=document.getElementById('fStatus').value,fz=document.getElementById('fZone').value;
   const rows=jobs.map((j,i)=>({...j,i})).filter(j=>{
     if(fs&&(j.status||'').toLowerCase()!==fs)return false;
+    if(fz&&(j.zone||'').trim()!==fz)return false;
     return !q||[j.customer,j.address,j.zone,j.phone,j.notes].join(' ').toLowerCase().includes(q);
   });
   rows.sort((a,b)=>SORTS[sortCol](a,b)*sortDir);
@@ -295,7 +326,7 @@ function render(){
     <th data-sort="customer" data-label="Customer">Customer</th><th>Address</th><th>Zone</th><th>Phone</th><th data-sort="status" data-label="Status">Status</th><th data-sort="quote" data-label="Quote">Quote</th><th data-sort="updated" data-label="Updated">Updated</th><th>Notes</th><th><input type="checkbox" id="selAll" title="Select all shown" onchange="selectAllShown(this.checked)"></th><th></th></tr></thead><tbody>
     ${rows.map(j=>{const qa=quoteTotal(j);const sid=String(j.id);return `<tr data-id="${esc(sid)}"><td><b>${esc(j.customer)}</b>${isPending(j)?'<span class="pending-tag">unsynced</span>':''}</td><td>${esc(j.address)}</td><td>${esc(j.zone)}</td>
     <td>${j.phone?`<a style="color:var(--green);text-decoration:none" href="tel:${esc(j.phone.replace(/[^0-9+]/g,''))}">${esc(j.phone)}</a>`:''}</td>
-    <td><span class="badge ${badge(j.status)}">${esc(j.status||'new')}</span></td>
+    <td><select class="rowstatus" onchange="rowSetStatus('${esc(sid)}',this.value)" title="Change status">${['new','quoted','scheduled','completed','paid'].map(s=>`<option value="${s}"${((j.status||'new')===s)?' selected':''}>${s[0].toUpperCase()+s.slice(1)}</option>`).join('')}</select></td>
     <td>${qa!=null?'$'+qa.toLocaleString():''}</td>
     <td><span class="ago">${timeAgo(j.updated_at||j.created_at)}</span><br><span class="ago">${(j.updated_at||j.created_at)?new Date(j.updated_at||j.created_at).toLocaleDateString():''}</span></td>
     <td>${esc(j.notes)}</td>

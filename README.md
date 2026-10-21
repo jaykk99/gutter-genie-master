@@ -22,12 +22,18 @@ was paused in Oct 2026); the linked satellite apps that still point at
   loads each app in a sandboxed iframe with a loading spinner and a
   "taking too long" error bar (retry + open-in-new-tab). Online/offline
   indicator in the topbar. A service worker (`sw.js`) caches the hub shell
-  so the dashboard opens with no connection.
+  so the dashboard opens with no connection. Keyboard: `1`–`9` opens apps in
+  card order, `0`/`H` goes home.
 - `jobs.html`: Jobs Tracker. Searchable job log (customer, address, zone,
   phone, status, quote, notes) reading the `gg_projects` Supabase table, with
-  realtime updates, CSV export, tappable phone numbers, and a Notion link.
+  realtime updates, CSV export (exports the current filter/sort), tappable
+  phone numbers, and a Notion link.
   Click any sortable column header (Customer, Status, Quote, Updated) to sort;
-  click again to flip direction. Offline mode: every successful cloud load
+  click again to flip direction. Each row has a status dropdown for inline
+  status changes and a checkbox for batch work: select several jobs, then
+  apply one status or delete them in a single action. A pipeline bar shows
+  total jobs, total quoted dollars, and per-status counts. Zone filter is
+  built from the loaded jobs.
   refreshes a localStorage cache; jobs added while offline are queued and
   auto-synced to the cloud on the next successful load (marked "unsynced"
   until then). Table shows skeleton rows while loading, a last-synced

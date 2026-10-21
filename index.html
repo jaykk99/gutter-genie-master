@@ -78,6 +78,7 @@ body{background:var(--bg);color:var(--text);display:flex;height:100vh;overflow:h
 @keyframes shimmer{to{background-position:-200% 0}}
 
 .tools-head{font-size:14px;text-transform:uppercase;letter-spacing:.8px;color:#6b9c80;font-weight:600;margin:0 2px 12px}
+.kbd-hint{font-size:11px;color:#5b7d68;text-transform:none;letter-spacing:0;font-weight:400;margin-left:8px}
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:16px}
 .card{background:var(--panel2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;cursor:pointer;transition:.16s;position:relative;display:flex;flex-direction:column}
 .card:hover{border-color:var(--green);transform:translateY(-3px);box-shadow:0 10px 28px rgba(0,0,0,.35)}
@@ -201,7 +202,7 @@ function showHome(){
       <span class="sync-line"><span id="syncText">Not synced yet</span><button class="refresh" id="refreshStats">↻ Refresh</button></span>
     </div>
     <div class="stats" id="stats"></div>
-    <div class="tools-head">Tools</div>
+    <div class="tools-head">Tools <span class="kbd-hint">keyboard: 1–9 opens an app, 0 goes home</span></div>
     <div class="cards" id="cards"></div>
     <div class="foot-note">Gutter Genie · ${PHONE} · ${EMAIL}</div>
   </div>`;
@@ -214,8 +215,8 @@ function showHome(){
 /* ---------- cards + link health ---------- */
 function renderCards(){
   const wrap=document.getElementById('cards');if(!wrap)return;
-  wrap.innerHTML=Object.entries(APPS).map(([k,a])=>`
-    <div class="card" data-app="${k}" role="button" tabindex="0" aria-label="Open ${esc(a.name)}">
+  wrap.innerHTML=Object.entries(APPS).map(([k,a],idx)=>`
+    <div class="card" data-app="${k}" role="button" tabindex="0" aria-label="Open ${esc(a.name)} (keyboard: ${idx+1})" title="Keyboard: ${idx+1}">
       <div class="top"><span class="icon">${a.icon}</span><span class="status wait" data-status="${k}" title="Checking…"></span></div>
       ${a.soon?'<span class="tag soon">Facebook only</span>':a.local?'<span class="tag local">Local · offline-ready</span>':'<span class="tag">App</span>'}
       <h3>${esc(a.name)}</h3><p>${esc(a.desc)}</p>
@@ -323,13 +324,27 @@ async function loadStats(){
 }
 
 /* ---------- nav ---------- */
+function goHome(){
+  current='home';
+  document.querySelectorAll('.nav-btn').forEach(x=>x.classList.toggle('active',x.dataset.view==='home'));
+  showHome();closeNav();
+}
 document.querySelectorAll('.nav-btn').forEach(b=>b.addEventListener('click',()=>{
   const v=b.dataset.view;
   document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');
-  if(v==='home'){current='home';showHome();}
+  if(v==='home'){goHome();}
   else selectApp(v);
   closeNav();
 }));
+// keyboard: 1-9 jump to apps in card order, 0/H goes home (ignored while typing)
+document.addEventListener('keydown',e=>{
+  if(/INPUT|TEXTAREA|SELECT/.test((e.target.tagName||'')))return;
+  if(e.metaKey||e.ctrlKey||e.altKey)return;
+  const keys=Object.keys(APPS);
+  if(e.key==='0'||e.key==='h'||e.key==='H'){goHome();return;}
+  const n=parseInt(e.key,10);
+  if(n>=1&&n<=keys.length)selectApp(keys[n-1]);
+});
 showHome();
 </script>
 </body>
