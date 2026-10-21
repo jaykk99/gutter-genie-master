@@ -1,0 +1,1 @@
+{"description":"Gutter Genie business hub dashboard (static; served via Cloudflare Pages / any static host)","name":"gutter-genie-master","private":true,"scripts":{"serve":"python3 -m http.server 8080","test":"node --test test/media-tags.test.js"},"version":"2.0.0"}

@@ -8,6 +8,10 @@
 <meta name="theme-color" content="#0a1a12">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%AA%A0%3C/text%3E%3C/svg%3E">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// Offline shell: cache the hub pages so the dashboard opens with no connection.
+if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});}
+</script>
 <style>
 :root{
   --bg:#0a1a12; --panel:#0f2b1f; --panel2:#123626; --border:#1d4432;
@@ -159,6 +163,7 @@ const APPS={
   quote:{name:'ProQuote Estimator',icon:'💲',desc:'Eavestrough quote generator, build and send customer quotes from the phone.',url:'https://proquote-estimator.vercel.app',backup:'https://proquote-estimator.vercel.app'},
   quotemcp:{name:'Quote Engine API (MCP)',icon:'🔌',desc:'Connects job photos to notes, pricing and ready-to-send quotes.',url:'https://gutter-genie-quote-mcp.vercel.app',backup:'https://gutter-genie-quote-mcp.vercel.app'},
   media:{name:'Media Vault',icon:'🖼️',desc:'PIN-gated photo/video/file uploader organized by project.',url:'https://gutter-genie-media.vercel.app',backup:'https://gutter-genie-media.vercel.app'},
+  tagcheck:{name:'Media Tag Check',icon:'🏷️',desc:'Diagnostics: is the gg_media_files tag column migration applied? Shows the active tag write path.',url:'tag-check.html',local:true},
   calls:{name:'Call Console',icon:'📞',desc:'Gutter Genie call handling console.',url:'https://guttergenie-call-console.vercel.app',backup:'https://guttergenie-call-console.vercel.app'},
   site:{name:'Gutter Genie Site',icon:'🌐',desc:'Customer-facing Gutter Genie website.',url:'https://guttergenie.pages.dev',backup:'https://guttergenie.vercel.app'},
   webworks:{name:'Winnipeg Web Works',icon:'💻',desc:'Digital audit service landing page, live AI audit chat widget.',url:'https://winnipeg-web-works.vercel.app',backup:'https://winnipeg-web-works.vercel.app'},
@@ -222,17 +227,42 @@ function renderCards(){
     c.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open();}});
   });
 }
+/* Link health: live-checked on load and every 5 minutes. Results are cached
+ * in localStorage so an offline open still shows the last known state with
+ * its age. When the primary URL fails, the backup URL is probed before the
+ * app is marked down. */
+const HEALTH_KEY='gg_hub_link_health_v1';
+const HEALTH_INTERVAL=5*60*1000;
+function readHealthCache(){try{return JSON.parse(localStorage.getItem(HEALTH_KEY)||'{}');}catch(e){return{};}}
+function writeHealthCache(c){try{localStorage.setItem(HEALTH_KEY,JSON.stringify(c));}catch(e){}}
+async function probe(url,timeoutMs){
+  const ctrl=new AbortController();const to=setTimeout(()=>ctrl.abort(),timeoutMs||10000);
+  try{await fetch(url,{mode:'no-cors',signal:ctrl.signal,cache:'no-store'});clearTimeout(to);return true;}
+  catch(e){clearTimeout(to);return false;}
+}
 async function checkHealth(){
+  const cache=readHealthCache();
   for(const [k,a] of Object.entries(APPS)){
     const el=document.querySelector(`[data-status="${k}"]`);if(!el)break;
     const set=(cls,t)=>{el.className='status '+cls;el.title=t;};
     if(a.local){set('ok','Local page, works offline');continue;}
-    if(!navigator.onLine){set('wait','Offline, status unknown');continue;}
-    const ctrl=new AbortController();const to=setTimeout(()=>ctrl.abort(),10000);
-    try{await fetch(a.url,{mode:'no-cors',signal:ctrl.signal,cache:'no-store'});clearTimeout(to);set('ok','Reachable');}
-    catch(e){clearTimeout(to);set('down','Unreachable right now, try “Open in new tab”');}
+    if(!navigator.onLine){
+      const c=cache[k];
+      if(c)set(c.cls,'Offline now. Last check '+timeAgo(c.at)+': '+c.note);
+      else set('wait','Offline, status unknown');
+      continue;
+    }
+    set('wait','Checking '+a.name+'…');
+    let cls,note;
+    if(await probe(a.url)){cls='ok';note='Reachable';}
+    else if(a.backup&&a.backup!==a.url&&await probe(a.backup,8000)){cls='ok';note='Primary down, backup URL reachable';}
+    else{cls='down';note='Unreachable right now, try "Open in new tab"';}
+    const at=Date.now();
+    cache[k]={cls:cls,note:note,at:at};writeHealthCache(cache);
+    set(cls,note+' · checked '+timeAgo(at));
   }
 }
+setInterval(()=>{if(current==='home'&&navigator.onLine)checkHealth();},HEALTH_INTERVAL);
 
 /* ---------- iframe app view ---------- */
 function selectApp(k){

@@ -7,6 +7,10 @@
 <meta name="theme-color" content="#0a1a12">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%8B%3C/text%3E%3C/svg%3E">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// Offline shell: cache the hub pages so the tracker opens with no connection.
+if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});}
+</script>
 <style>
 :root{--bg:#0a1a12;--panel:#0f2b1f;--panel2:#123626;--border:#1d4432;--green:#4ade80;--green-dim:#2f855a;--text:#e8f5ee;--muted:#9dc7af;--red:#f87171;--amber:#fbbf24;--blue:#60a5fa;--purple:#c084fc;--radius:12px}
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',system-ui,-apple-system,sans-serif}
@@ -36,6 +40,8 @@ form h2{grid-column:1/-1;font-size:16px;color:#c9e8d6}
 table{width:100%;border-collapse:collapse;background:var(--panel);min-width:760px}
 th,td{padding:12px 14px;text-align:left;font-size:14px;border-bottom:1px solid var(--border);vertical-align:top}
 th{background:var(--panel2);color:var(--green);font-size:12px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+th[data-sort]{cursor:pointer;user-select:none}
+th[data-sort]:hover{color:#fff}
 tbody tr:last-child td{border-bottom:none}
 tr:hover td{background:var(--panel2)}
 .badge{padding:3px 10px;border-radius:20px;font-size:12px;white-space:nowrap;text-transform:capitalize}
@@ -48,7 +54,17 @@ a.btn{background:#1d5b3c;border:1px solid var(--green-dim);color:#fff;padding:10
 .skel-row td{padding:16px 14px}
 .skel{display:block;height:14px;border-radius:6px;background:linear-gradient(100deg,var(--panel2) 40%,#1c4a32 50%,var(--panel2) 60%);background-size:200% 100%;animation:shimmer 1.1s infinite}
 @keyframes shimmer{to{background-position:-200% 0}}
+#pipeline{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-bottom:14px;align-items:center}
+#pipeline b{color:var(--text)}
+#pipeline .pmoney b{color:var(--amber)}
 .pending-tag{font-size:11px;color:var(--amber);border:1px solid #5f4a1a;border-radius:12px;padding:1px 8px;margin-left:6px;white-space:nowrap}
+#batchbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--panel);border:1px solid #5f4a1a;border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:13.5px}
+#batchbar[hidden]{display:none}
+#batchCount{color:var(--amber);font-weight:700}
+button.danger{background:#5f1e1e;border-color:#7f2a2a}
+button.ghostbtn{background:none;border:1px solid var(--border)}
+.rowsel{width:17px;height:17px;accent-color:var(--green);cursor:pointer}
+#selAll{width:17px;height:17px;accent-color:var(--green);cursor:pointer}
 .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--panel2);border:1px solid var(--green-dim);color:var(--text);padding:12px 20px;border-radius:10px;font-size:14px;opacity:0;transition:.25s;pointer-events:none;z-index:50;max-width:90vw;text-align:center}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 @media(max-width:640px){body{padding:14px}h1{font-size:20px}}
@@ -71,6 +87,17 @@ a.btn{background:#1d5b3c;border:1px solid var(--green-dim);color:#fff;padding:10
   </select>
   <button onclick="exportCSV()">Export CSV</button>
 </div>
+<div id="batchbar" hidden>
+  <span id="batchCount"></span>
+  <select id="batchStatus">
+    <option value="">Set status…</option>
+    <option value="new">New</option><option value="quoted">Quoted</option><option value="scheduled">Scheduled</option><option value="completed">Completed</option><option value="paid">Paid</option>
+  </select>
+  <button onclick="batchSetStatus()">Apply status</button>
+  <button class="danger" onclick="batchDelete()">Delete selected</button>
+  <button class="ghostbtn" onclick="selected.clear();render()">Clear selection</button>
+</div>
+<div id="pipeline"></div>
 <form id="jobForm">
   <h2>➕ Add Job</h2>
   <input id="customer" placeholder="Customer Name *" required>
@@ -97,7 +124,7 @@ const readLocal=()=>{try{return JSON.parse(localStorage.getItem(LOCAL_KEY)||'[]'
 const writeLocal=(rows)=>{try{localStorage.setItem(LOCAL_KEY,JSON.stringify(rows));}catch(e){}};
 const isPending=(j)=>j.id&&String(j.id).indexOf('local-')===0;
 
-let jobs=[], lastSynced=null, loading=false;
+let jobs=[], lastSynced=null, loading=false, lastRows=[];
 const syncText=document.getElementById('syncText'),syncDot=document.getElementById('syncDot'),retryBtn=document.getElementById('retryBtn');
 function setSync(mode,msg){
   syncText.textContent=msg;
@@ -109,7 +136,7 @@ function timeAgo(d){if(!d)return'';const s=(Date.now()-new Date(d).getTime())/1e
  if(s<604800)return Math.floor(s/86400)+'d ago';return Math.floor(s/604800)+'w ago';}
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2600);}
 function showSkeletons(){document.getElementById('list').innerHTML=
-  `<div class="table-scroll"><table><tbody>${'<tr class="skel-row"><td colspan="9"><span class="skel"></span></td></tr>'.repeat(5)}</tbody></table></div>`;}
+  `<div class="table-scroll"><table><tbody>${'<tr class="skel-row"><td colspan="10"><span class="skel"></span></td></tr>'.repeat(5)}</tbody></table></div>`;}
 
 /* ---- load: cloud first, flush pending offline adds, cache locally ---- */
 async function load(){
@@ -160,30 +187,129 @@ async function flushPending(){
   render();
 }
 
+/* ---- batch selection: checkbox column + batch status/delete ---- */
+let selected=new Set();
 function badge(s){return 'b-'+(s||'new').toLowerCase();}
 function quoteTotal(j){return j.quote&&j.quote.total!=null?Number(j.quote.total):null;}
+
+/* ---- pipeline summary: totals across all loaded jobs ---- */
+function renderPipeline(){
+  const el=document.getElementById('pipeline');if(!el)return;
+  const n=jobs.length;
+  const total=jobs.reduce((a,j)=>a+(quoteTotal(j)||0),0);
+  const counts={};
+  jobs.forEach(j=>{const s=(j.status||'new').toLowerCase();counts[s]=(counts[s]||0)+1;});
+  const money=v=>'$'+Math.round(v).toLocaleString();
+  el.innerHTML=`<span><b>${n}</b> job${n===1?'':'s'}</span><span class="pmoney"><b>${money(total)}</b> quoted</span>`+
+    Object.keys(counts).sort().map(s=>`<span><span class="badge ${badge(s)}">${s}</span> ${counts[s]}</span>`).join('');
+}
+function toggleSelect(id,checked){checked?selected.add(id):selected.delete(id);renderBatchBar();}
+function selectAllShown(checked){
+  document.querySelectorAll('#list tbody tr[data-id]').forEach(tr=>{
+    const id=tr.dataset.id;
+    checked?selected.add(id):selected.delete(id);
+  });
+  render(); // re-render to sync checkbox states
+}
+function renderBatchBar(){
+  const bar=document.getElementById('batchbar');
+  const n=selected.size;
+  if(!n){bar.hidden=true;return;}
+  bar.hidden=false;
+  document.getElementById('batchCount').textContent=n+' selected';
+}
+async function batchSetStatus(){
+  const s=document.getElementById('batchStatus').value;
+  if(!s||!selected.size)return;
+  const ids=[...selected];
+  // optimistic UI: update local rows first
+  jobs.forEach(j=>{if(ids.includes(String(j.id)))j.status=s;});
+  writeLocal(jobs);selected.clear();render();
+  toast('Updated '+ids.length+' job'+(ids.length>1?'s':'')+' to '+s);
+  if(!sb||!navigator.onLine){toast('Saved on this device; will sync status when online');return;}
+  // push to cloud, keep going on individual failures
+  let failed=0;
+  for(const id of ids){
+    if(isPending({id}))continue; // offline rows sync via flushPending
+    try{const{error}=await sb.from('gg_projects').update({status:s}).eq('id',id);if(error)failed++;}
+    catch(e){failed++;}
+  }
+  if(failed)toast('⚠ '+failed+' update'+(failed>1?'s':'')+' failed: will retry on next sync');
+  load();
+}
+async function batchDelete(){
+  const n=selected.size;
+  if(!n||!confirm('Delete '+n+' selected job'+(n>1?'s':'')+'?'))return;
+  const ids=[...selected];
+  jobs=jobs.filter(j=>!ids.includes(String(j.id)));
+  writeLocal(jobs);selected.clear();render();
+  if(sb&&navigator.onLine){
+    for(const id of ids){
+      if(String(id).indexOf('local-')===0)continue;
+      try{await sb.from('gg_projects').delete().eq('id',id);}catch(e){}
+    }
+  }
+  toast('Deleted '+n+' job'+(n>1?'s':''));
+  load();
+}
+
+/* ---- sortable columns: click a header to sort, click again to flip ---- */
+let sortCol='updated',sortDir=-1; // default: most recently updated first
+const SORTS={
+  customer:(a,b)=>String(a.customer||'').localeCompare(String(b.customer||'')),
+  status:(a,b)=>String(a.status||'new').localeCompare(String(b.status||'new')),
+  quote:(a,b)=>(quoteTotal(a)??-1)-(quoteTotal(b)??-1),
+  updated:(a,b)=>new Date(a.updated_at||a.created_at||0)-new Date(b.updated_at||b.created_at||0),
+};
+function setSort(col){
+  if(sortCol===col){sortDir*=-1;}else{sortCol=col;sortDir=col==='customer'||col==='status'?1:-1;}
+  render();
+}
+function paintSortHeaders(){
+  document.querySelectorAll('th[data-sort]').forEach(th=>{
+    const on=th.dataset.sort===sortCol;
+    th.innerHTML=th.dataset.label+(on?(sortDir===1?' ▲':' ▼'):'');
+  });
+}
 function esc(s){return (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 function render(){
+  // drop selections for rows that no longer exist
+  if(selected.size){
+    const alive=new Set(jobs.map(j=>String(j.id)));
+    selected=new Set([...selected].filter(id=>alive.has(id)));
+  }
   const q=document.getElementById('search').value.toLowerCase(),fs=document.getElementById('fStatus').value;
   const rows=jobs.map((j,i)=>({...j,i})).filter(j=>{
     if(fs&&(j.status||'').toLowerCase()!==fs)return false;
     return !q||[j.customer,j.address,j.zone,j.phone,j.notes].join(' ').toLowerCase().includes(q);
   });
+  rows.sort((a,b)=>SORTS[sortCol](a,b)*sortDir);
+  lastRows=rows; // exportCSV ships exactly what the table shows
+  renderPipeline();
   const pend=jobs.filter(isPending).length;
   if(!rows.length){
     document.getElementById('list').innerHTML='<div class="empty">'+
       (jobs.length?'No jobs match your search.':'No jobs yet.')+
       '<br><button onclick="load()">↻ Reload</button></div>';return;}
   document.getElementById('list').innerHTML=`<div class="table-scroll"><table><thead><tr>
-    <th>Customer</th><th>Address</th><th>Zone</th><th>Phone</th><th>Status</th><th>Quote</th><th>Updated</th><th>Notes</th><th></th></tr></thead><tbody>
-    ${rows.map(j=>{const qa=quoteTotal(j);return `<tr><td><b>${esc(j.customer)}</b>${isPending(j)?'<span class="pending-tag">unsynced</span>':''}</td><td>${esc(j.address)}</td><td>${esc(j.zone)}</td>
+    <th data-sort="customer" data-label="Customer">Customer</th><th>Address</th><th>Zone</th><th>Phone</th><th data-sort="status" data-label="Status">Status</th><th data-sort="quote" data-label="Quote">Quote</th><th data-sort="updated" data-label="Updated">Updated</th><th>Notes</th><th><input type="checkbox" id="selAll" title="Select all shown" onchange="selectAllShown(this.checked)"></th><th></th></tr></thead><tbody>
+    ${rows.map(j=>{const qa=quoteTotal(j);const sid=String(j.id);return `<tr data-id="${esc(sid)}"><td><b>${esc(j.customer)}</b>${isPending(j)?'<span class="pending-tag">unsynced</span>':''}</td><td>${esc(j.address)}</td><td>${esc(j.zone)}</td>
     <td>${j.phone?`<a style="color:var(--green);text-decoration:none" href="tel:${esc(j.phone.replace(/[^0-9+]/g,''))}">${esc(j.phone)}</a>`:''}</td>
     <td><span class="badge ${badge(j.status)}">${esc(j.status||'new')}</span></td>
     <td>${qa!=null?'$'+qa.toLocaleString():''}</td>
     <td><span class="ago">${timeAgo(j.updated_at||j.created_at)}</span><br><span class="ago">${(j.updated_at||j.created_at)?new Date(j.updated_at||j.created_at).toLocaleDateString():''}</span></td>
     <td>${esc(j.notes)}</td>
+    <td><input type="checkbox" class="rowsel" data-id="${esc(sid)}" ${selected.has(sid)?'checked':''} onchange="toggleSelect('${esc(sid)}',this.checked)" title="Select for batch actions"></td>
     <td><button class="del" onclick="del(${j.i})" title="Delete">✕</button></td></tr>`;}).join('')}
   </tbody></table></div>${pend?`<p style="margin-top:10px;font-size:12.5px;color:var(--amber)">⏳ ${pend} job${pend>1?'s':''} saved offline: will sync automatically when you're back online.</p>`:''}`;
+  paintSortHeaders();
+  renderBatchBar();
+  const selAll=document.getElementById('selAll');
+  if(selAll){
+    const boxes=[...document.querySelectorAll('#list .rowsel')];
+    selAll.checked=boxes.length>0&&boxes.every(b=>b.checked);
+    selAll.indeterminate=boxes.some(b=>b.checked)&&!selAll.checked;
+  }
 }
 async function del(i){
   const j=jobs[i];if(!confirm('Delete '+(j.customer||'this job')+'?'))return;
@@ -195,9 +321,11 @@ async function del(i){
   jobs.splice(i,1);writeLocal(jobs);render();
 }
 function exportCSV(){
+  const list=lastRows.length?lastRows:jobs;
   const h=['Customer','Address','Zone','Phone','Status','Quote Total','Quote Text','Created','Updated','Notes'];
-  const csv=[h].concat(jobs.map(j=>[j.customer,j.address,j.zone,j.phone,j.status,quoteTotal(j),j.quote_text,j.created_at,j.updated_at,j.notes])).map(r=>r.map(v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const csv=[h].concat(list.map(j=>[j.customer,j.address,j.zone,j.phone,j.status,quoteTotal(j),j.quote_text,j.created_at,j.updated_at,j.notes])).map(r=>r.map(v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"').join(',')).join('\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='gutter-genie-jobs.csv';a.click();
+  toast('Exported '+list.length+' job'+(list.length===1?'':'s')+' (current filter)');
 }
 document.getElementById('jobForm').addEventListener('submit',async e=>{
   e.preventDefault();
@@ -221,6 +349,11 @@ document.getElementById('jobForm').addEventListener('submit',async e=>{
   saveBtn.disabled=false;
 });
 document.getElementById('retryBtn').addEventListener('click',load);
+// event delegation: the table (including its headers) is re-rendered often
+document.getElementById('list').addEventListener('click',e=>{
+  const th=e.target.closest('th[data-sort]');
+  if(th)setSort(th.dataset.sort);
+});
 window.addEventListener('online',()=>{toast('🌐 back online: syncing…');load();});
 window.addEventListener('offline',()=>{setSync('err','⚠ offline: showing saved copy ('+jobs.length+' jobs)');});
 load();

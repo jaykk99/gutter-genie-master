@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Media Tag Check: Gutter Genie</title>
+<meta name="theme-color" content="#0a1a12">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8F%B7%EF%B8%8F%3C/text%3E%3C/svg%3E">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/media-tags.js"></script>
+<style>
+:root{--bg:#0a1a12;--panel:#0f2b1f;--panel2:#123626;--border:#1d4432;--green:#4ade80;--green-dim:#2f855a;--text:#e8f5ee;--muted:#9dc7af;--red:#f87171;--amber:#fbbf24;--radius:12px}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',system-ui,-apple-system,sans-serif}
+body{background:var(--bg);color:var(--text);min-height:100vh;padding:24px}
+.wrap{max-width:720px;margin:0 auto}
+h1{color:var(--green);font-size:24px;margin-bottom:6px}
+.sub{color:var(--muted);font-size:13.5px;margin-bottom:20px;line-height:1.6}
+.back{color:var(--muted);text-decoration:none;font-size:14px;display:inline-block;margin-bottom:18px}
+.back:hover{color:#fff}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:16px}
+.card h2{font-size:16px;margin-bottom:10px}
+.status{font-size:15px;font-weight:700;margin-bottom:8px}
+.status.ok{color:var(--green)}
+.status.warn{color:var(--amber)}
+.status.err{color:var(--red)}
+.detail{font-size:13.5px;color:var(--muted);line-height:1.65}
+.detail code{background:#07130d;border:1px solid var(--border);border-radius:6px;padding:1px 7px;font-size:12.5px;color:var(--text)}
+.detail ol{margin:10px 0 0 20px}
+.detail li{margin-bottom:6px}
+button{background:#1d5b3c;border:1px solid var(--green-dim);color:#fff;padding:10px 18px;border-radius:8px;cursor:pointer;font-size:14px;font-family:inherit}
+button:hover{background:#247248}
+button:disabled{opacity:.5;cursor:default}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.spin{display:inline-block;width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:sp .8s linear infinite;vertical-align:-3px}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media(max-width:640px){body{padding:14px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="index.html">← Master App</a>
+  <h1>🏷️ Media Tag Check</h1>
+  <p class="sub">Diagnostics for the <code>tag</code> column on the <code>gg_media_files</code> table.
+  The gallery app feature-detects this column: if the migration below has not been applied yet,
+  tagging falls back to the legacy <code>photo_type</code> column and nothing breaks.</p>
+
+  <div class="card">
+    <h2>Column status</h2>
+    <div class="status" id="status"><span class="spin"></span> Checking…</div>
+    <div class="detail" id="detail"></div>
+    <div class="row" style="margin-top:14px">
+      <button id="recheck">↻ Re-check</button>
+    </div>
+  </div>
+
+  <div class="card" id="migCard" hidden>
+    <h2>Apply the migration</h2>
+    <div class="detail">
+      <ol>
+        <li>Open the Supabase SQL editor for the Gutter Genie project.</li>
+        <li>Run <code>supabase/migrations/001_gg_media_files_add_tag.sql</code> from this repo (idempotent, safe to re-run).</li>
+        <li>Press <b>Re-check</b> above. The gallery starts using the <code>tag</code> column immediately, no app update needed.</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Active write path</h2>
+    <div class="detail" id="writepath">Checking…</div>
+  </div>
+</div>
+<script>
+const SB_URL='https://fhbqxujlnqlmzvulrdxt.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoYnF4dWpsbnFsbXp2dWxyZHh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc2MTc0NDQsImV4cCI6MjEwMzE5MzQ0NH0.ThFmY_FXQlnaaI8GNLz9xSHATOacM9iOb8u0G0WFJ2w';
+let sb=null;
+try{ sb=supabase.createClient(SB_URL,SB_KEY); }catch(e){ sb=null; }
+
+const statusEl=document.getElementById('status'),
+      detailEl=document.getElementById('detail'),
+      migCard=document.getElementById('migCard'),
+      writeEl=document.getElementById('writepath'),
+      recheckBtn=document.getElementById('recheck');
+
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+async function check(){
+  recheckBtn.disabled=true;
+  statusEl.innerHTML='<span class="spin"></span> Checking…';
+  detailEl.textContent='';
+  GGMediaTags.resetSupportCache(); // re-probe, don't trust the memoized answer
+  const support=await GGMediaTags.detectTagSupport(sb);
+  recheckBtn.disabled=false;
+  if(support.tagColumn){
+    statusEl.className='status ok';
+    statusEl.textContent='✓ tag column is present';
+    detailEl.innerHTML='The gallery writes and reads the <code>tag</code> column directly. '+
+      'Known tags: '+GGMediaTags.KNOWN_TAGS.map(t=>'<code>'+esc(t)+'</code>').join(' ')+'.';
+    migCard.hidden=true;
+  }else if(support.reason==='missing-column'){
+    statusEl.className='status warn';
+    statusEl.textContent='⚠ tag column not found: using photo_type fallback';
+    detailEl.textContent='The migration has not been applied yet. Tagging still works: reads and writes go through the legacy photo_type column.';
+    migCard.hidden=false;
+  }else{
+    statusEl.className='status err';
+    statusEl.textContent='✕ could not reach the database ('+esc(support.reason)+')';
+    detailEl.textContent='Check your connection and press Re-check. Nothing was changed.';
+    migCard.hidden=true;
+  }
+  // show which column a tag write would hit right now
+  const payload=GGMediaTags.tagWritePayload('Before',support);
+  const col=Object.keys(payload)[0];
+  writeEl.innerHTML='Tagging <code>Before</code> would write column <code>'+esc(col)+'</code> '+
+    (support.tagColumn?'on <code>gg_media_files</code>.':'via the legacy fallback (migration pending).');
+}
+
+recheckBtn.addEventListener('click',check);
+if(!sb){statusEl.className='status err';statusEl.textContent='✕ cloud library failed to load';}
+else if(!navigator.onLine){statusEl.className='status warn';statusEl.textContent='⚠ offline: cannot probe the database';}
+else check();
+</script>
+</body>
+</html>
